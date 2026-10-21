@@ -1,0 +1,212 @@
+"use client"
+
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import api from '@/lib/api'
+import { io } from 'socket.io-client'
+
+const AuthContext = createContext()
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(null)
+  const [role, setRole] = useState(null)
+  const [authLoaded, setAuthLoaded] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Initial load from sessionStorage
+  useEffect(() => {
+    const loadAuth = () => {
+      console.log("[AuthContext] loadAuth started (sessionStorage)");
+      try {
+        const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+        const storedToken = activeStorage.getItem('token')
+        const storedRole = activeStorage.getItem('role')
+        const storedUser = activeStorage.getItem('user')
+
+        console.log("[AuthContext] Stored data:", { storedToken: !!storedToken, storedRole, hasUser: !!storedUser });
+
+        if (storedToken && storedRole) {
+          setToken(storedToken)
+          setRole(storedRole)
+          if (storedUser) {
+            try {
+              setUser(JSON.parse(storedUser))
+            } catch (e) {
+              console.error("[AuthContext] Failed to parse stored user")
+            }
+          }
+        } else {
+          console.log("[AuthContext] No valid stored session found");
+          setToken(null)
+          setRole(null)
+          setUser(null)
+        }
+      } catch (e) {
+        console.error("[AuthContext] Failed to load auth from storage:", e)
+      } finally {
+        setAuthLoaded(true)
+      }
+    }
+
+    loadAuth()
+
+    // storage event doesn't trigger for sessionStorage changes in the same window
+    // but we'll keep it for cross-tab sync if they use the same storage later
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' || e.key === 'role' || e.key === null) {
+        loadAuth()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  // Verify token with backend
+  useEffect(() => {
+    let interval;
+    if (authLoaded && token && role) {
+      console.log(`[AuthContext] verifyToken triggered for ${role}`);
+      const verifyToken = async () => {
+        try {
+          const res = await api.get('/auth/me')
+          if (res.data.success) {
+            const actualUser = res.data.data
+            console.log("[AuthContext] verifyToken success. Role from API:", actualUser.role);
+            
+            setUser(prevUser => {
+              if (JSON.stringify(prevUser) === JSON.stringify(actualUser)) {
+                return prevUser;
+              }
+              return actualUser;
+            })
+            const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+            if (actualUser.role) {
+              setRole(actualUser.role)
+              activeStorage.setItem('role', actualUser.role)
+            }
+            activeStorage.setItem('user', JSON.stringify(actualUser))
+          }
+        } catch (err) {
+          console.error("[AuthContext] verifyToken failed:", err.response?.status)
+          if (err.response?.status === 401) {
+            console.warn("[AuthContext] 401 Unauthorized - logging out");
+            logout()
+          }
+        }
+      }
+      
+      verifyToken()
+    }
+  }, [authLoaded, token])
+
+  // Listen to profile updates to sync state in real-time across the app
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      console.log("[AuthContext] Profile updated event received. Synching user state...");
+      const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+      const storedUser = activeStorage.getItem('user')
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(prevUser => {
+            if (JSON.stringify(prevUser) === JSON.stringify(parsedUser)) {
+              return prevUser;
+            }
+            return parsedUser;
+          })
+        } catch (e) {
+          console.error("[AuthContext] Failed to parse updated user from storage", e)
+        }
+      }
+    }
+    window.addEventListener("profileUpdated", handleProfileUpdated)
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdated)
+  }, [])
+
+  // Listen to socket for real-time status updates
+  useEffect(() => {
+    let socket;
+    if (authLoaded && user && role === 'doctor') {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const socketUrl = apiBase.replace('/api', '');
+      
+      socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+      
+      socket.on('doctorStatusChanged', (data) => {
+        if (data.doctorId === user._id || data.doctorId === user.id) {
+          console.log("[AuthContext] Real-time status update received via socket:", data.status);
+          setUser(prev => {
+            if (!prev || prev.onlineStatus === data.status) return prev;
+            const updated = { ...prev, onlineStatus: data.status };
+            if (data.breakExpiresAt) {
+              updated.breakExpiresAt = data.breakExpiresAt;
+            } else if (data.status !== 'break') {
+              updated.breakExpiresAt = undefined;
+            }
+            const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+            activeStorage.setItem('user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      });
+    }
+    
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [authLoaded, user?._id, role]);
+
+  const login = useCallback((userData, userToken, userRole, rememberMe = false) => {
+    console.log("[AuthContext] login() called with role:", userRole);
+    
+    const storage = rememberMe ? localStorage : sessionStorage;
+    
+    // Set storage FIRST
+    storage.setItem('token', userToken)
+    if (userData.refreshToken) {
+      storage.setItem('refreshToken', userData.refreshToken)
+    }
+    storage.setItem('role', userRole)
+    storage.setItem('user', JSON.stringify(userData))
+    
+    // Then set state
+    setToken(userToken)
+    setRole(userRole)
+    setUser(userData)
+    
+    const routePath = userRole.replace('_', '-')
+    console.log(`[AuthContext] Redirecting to /${routePath}/dashboard`);
+    router.push(`/${routePath}/dashboard`)
+  }, [router])
+
+  const logout = useCallback(() => {
+    console.log("[AuthContext] logout() called");
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('refreshToken')
+    sessionStorage.removeItem('role')
+    sessionStorage.removeItem('user')
+    localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('role')
+    localStorage.removeItem('user')
+    setToken(null)
+    setRole(null)
+    setUser(null)
+    router.push('/auth/login')
+  }, [router])
+
+  const contextValue = useMemo(() => ({
+    user, token, role, authLoaded, login, logout
+  }), [user, token, role, authLoaded, login, logout])
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => useContext(AuthContext)
