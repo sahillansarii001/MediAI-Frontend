@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Activity, Star, Quote, ArrowLeft } from "lucide-react"
+import Logo from "@/components/shared/Logo"
 
 const testimonials = [
   {
@@ -46,12 +47,7 @@ export default function TestimonialsPage() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">MediAI</span>
-          </Link>
+          <Logo href="/" imageClassName="h-8 w-8" textClassName="text-xl font-bold" />
           <nav className="hidden md:flex gap-6">
             <Link href="/#features" className="text-sm font-medium text-slate-600 hover:text-slate-900">Features</Link>
             <Link href="/#how-it-works" className="text-sm font-medium text-slate-600 hover:text-slate-900">How it Works</Link>
@@ -143,9 +139,8 @@ export default function TestimonialsPage() {
 
       <footer className="bg-white border-t border-slate-200 py-12">
         <div className="container mx-auto px-4 sm:px-8 text-center text-slate-500">
-          <div className="flex items-center justify-center gap-2 mb-4 grayscale opacity-50">
-            <Activity className="h-5 w-5" />
-            <span className="font-bold">MediAI</span>
+          <div className="flex items-center justify-center mb-4">
+            <Logo href="/" imageClassName="h-7 w-7" textClassName="text-lg font-bold" />
           </div>
           <p>&copy; {new Date().getFullYear()} MediAI Ecosystem. All rights reserved.</p>
         </div>

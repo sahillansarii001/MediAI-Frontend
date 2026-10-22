@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Activity, ArrowLeft, Mail, CheckCircle2 } from "lucide-react"
+import Logo from "@/components/shared/Logo"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
@@ -73,12 +74,9 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8 flex flex-col items-center">
-          <Link href="/" className="flex items-center gap-2 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600">
-              <Activity className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900">MediAI</span>
-          </Link>
+          <div className="mb-6">
+            <Logo href="/" />
+          </div>
         </div>
 
         <Card>

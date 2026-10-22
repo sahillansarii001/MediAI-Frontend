@@ -10,7 +10,8 @@ export const metadata = {
   title: "Medi AI",
   description: "Advanced Healthcare AI Platform",
   icons: {
-    icon: "/icon.svg",
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 

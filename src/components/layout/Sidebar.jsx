@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import Logo from "@/components/shared/Logo"
 import {
   Activity,
   ChevronLeft,
@@ -103,7 +104,7 @@ export function Sidebar({ role }) {
   const toggleMobile = () => setMobileOpen(!mobileOpen)
 
   const sidebarClass = cn(
-    "fixed inset-y-0 left-0 z-50 flex flex-col bg-slate-900 transition-all duration-300 ease-in-out sm:relative",
+    "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-100 shadow-sm transition-all duration-300 ease-in-out sm:relative",
     collapsed ? "w-20" : "w-64",
     mobileOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
   )
@@ -121,7 +122,7 @@ export function Sidebar({ role }) {
       {/* Mobile Overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/50 sm:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-xs sm:hidden"
           onClick={toggleMobile}
         />
       )}
@@ -129,26 +130,24 @@ export function Sidebar({ role }) {
       {/* Sidebar */}
       <aside className={sidebarClass}>
         <div className={cn(
-          "flex h-16 items-center border-b border-slate-800 relative",
+          "flex h-16 items-center border-b border-slate-100 relative bg-white",
           collapsed ? "justify-center px-0" : "justify-between px-4"
         )}>
           <div className={cn(
             "flex items-center",
-            collapsed ? "justify-center mx-auto overflow-visible" : "gap-2 overflow-hidden"
+            collapsed ? "justify-center mx-auto overflow-visible" : "overflow-hidden"
           )}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            {!collapsed && (
-              <span className="text-xl font-bold tracking-tight text-white whitespace-nowrap">
-                MediAI
-              </span>
-            )}
+            <Logo
+              href={null}
+              variant="dark"
+              iconOnly={collapsed}
+              imageClassName="h-8 w-auto"
+            />
           </div>
           <button
             onClick={toggleCollapse}
             className={cn(
-              "hidden sm:flex p-1 rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors",
+              "hidden sm:flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-50 hover:text-cyan-600 transition-colors",
               collapsed ? "absolute right-1 top-1/2 -translate-y-1/2 scale-75" : ""
             )}
           >
@@ -156,8 +155,8 @@ export function Sidebar({ role }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-          <nav className="space-y-1 px-2">
+        <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <nav className="space-y-1 px-3">
             {currentLinks.map((item) => {
               const isActive = pathname.startsWith(item.href)
               const isDestructive = item.variant === "destructive"
@@ -168,19 +167,21 @@ export function Sidebar({ role }) {
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors group",
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all group",
                     isActive
-                      ? isDestructive ? "bg-red-500/10 text-red-500" : "bg-teal-500/10 text-teal-400"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                      ? isDestructive 
+                        ? "bg-red-50 text-red-600 font-bold shadow-xs" 
+                        : "bg-cyan-50/80 text-cyan-700 font-bold shadow-xs border border-cyan-100/50"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                     collapsed && "justify-center px-0"
                   )}
                   title={collapsed ? item.name : undefined}
                 >
                   <item.icon className={cn(
-                    "h-5 w-5 shrink-0",
-                    isActive && isDestructive ? "text-red-500" :
-                      isActive ? "text-teal-400" :
-                        "text-slate-400 group-hover:text-white"
+                    "h-5 w-5 shrink-0 transition-colors",
+                    isActive && isDestructive ? "text-red-600" :
+                      isActive ? "text-cyan-600" :
+                        "text-slate-400 group-hover:text-cyan-600"
                   )} />
                   {!collapsed && <span className="truncate">{item.name}</span>}
                 </Link>
@@ -189,15 +190,18 @@ export function Sidebar({ role }) {
           </nav>
         </div>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
           {!collapsed ? (
-            <div className="bg-slate-800 rounded-lg p-3">
-              <p className="text-xs text-slate-400 mb-1">Logged in as</p>
-              <p className="text-sm font-medium text-white capitalize">{role}</p>
+            <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-2xs">
+              <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">Logged in as</p>
+              <p className="text-sm font-bold text-slate-900 capitalize flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-cyan-500"></span>
+                {role}
+              </p>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-white uppercase">
+              <div className="h-8 w-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-xs font-bold text-cyan-700 uppercase">
                 {role.charAt(0)}
               </div>
             </div>

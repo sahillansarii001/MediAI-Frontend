@@ -29,7 +29,7 @@ const trustCards = [
     description: "Symptom check cross-referenced with 100K+ verified clinical cases.",
     icon: Brain,
     color: "from-teal-500/20 to-emerald-500/20",
-    iconColor: "text-teal-500"
+    iconColor: "text-cyan-600"
   },
   {
     title: "Verified Doctors",
@@ -115,7 +115,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
               variants={fadeInUp}
               className="max-w-3xl mx-auto text-center mb-20 space-y-4"
             >
-              <span className="text-xs font-bold uppercase tracking-widest text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-700 bg-cyan-50/70 px-3.5 py-1 rounded-full">
                 INTEGRATED NETWORK
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -132,7 +132,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
               {/* Laser line effect in middle */}
               <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[2px] h-[80%] bg-slate-100 z-0">
                 {/* Moving light dot */}
-                <div className="w-[6px] h-6 bg-teal-400 rounded-full absolute left-[-2px] animate-bounce shadow-md shadow-teal-500" />
+                <div className="w-[6px] h-6 bg-teal-400 rounded-full absolute left-[-2px] animate-bounce shadow-md shadow-cyan-500" />
               </div>
 
               {/* Patient Dashboard Preview (Left) */}
@@ -141,36 +141,36 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="bg-slate-950 border border-slate-850 rounded-[24px] p-6 shadow-xl text-left text-xs z-10"
+                className="bg-white border border-slate-200/80 rounded-[24px] p-6 shadow-xl shadow-cyan-500/5 text-left text-xs z-10"
               >
-                <div className="flex items-center justify-between pb-3.5 border-b border-slate-850 mb-5">
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-5">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-teal-500" />
-                    <span className="font-bold text-white">Patient Hub</span>
+                    <span className="h-2 w-2 rounded-full bg-cyan-500" />
+                    <span className="font-extrabold text-slate-900">Patient Hub</span>
                   </div>
-                  <span className="text-[10px] text-slate-500">ID: PT-39402</span>
+                  <span className="text-[10px] text-slate-400 font-medium">ID: PT-39402</span>
                 </div>
 
                 <div className="space-y-4">
                   {/* Biometrics row */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-[9px] text-slate-500 block uppercase font-bold">Vital saturation</span>
-                      <span className="text-lg font-black text-white mt-1 block">98% O₂</span>
+                    <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-xl">
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold tracking-wider">Vital saturation</span>
+                      <span className="text-lg font-black text-slate-900 mt-1 block">98% O₂</span>
                     </div>
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
-                      <span className="text-[9px] text-slate-500 block uppercase font-bold">Activity log</span>
-                      <span className="text-lg font-black text-white mt-1 block">8,490 Steps</span>
+                    <div className="bg-slate-50 border border-slate-200/70 p-3.5 rounded-xl">
+                      <span className="text-[9px] text-slate-400 block uppercase font-bold tracking-wider">Activity log</span>
+                      <span className="text-lg font-black text-slate-900 mt-1 block">8,490 Steps</span>
                     </div>
                   </div>
 
                   {/* Consultation card */}
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-2">
+                  <div className="bg-cyan-50/50 border border-cyan-100 p-3.5 rounded-xl space-y-2">
                     <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-slate-400 font-bold">Consultation Report</span>
-                      <span className="text-teal-400 font-bold bg-teal-950 px-2 py-0.5 rounded">READY</span>
+                      <span className="text-slate-700 font-bold">Consultation Report</span>
+                      <span className="text-cyan-700 font-extrabold bg-cyan-100 px-2 py-0.5 rounded">READY</span>
                     </div>
-                    <p className="text-slate-400 leading-normal text-[11px]">
+                    <p className="text-slate-600 leading-normal text-[11px] font-medium">
                       "AI symptom checker pre-assessment successfully submitted to clinic queue."
                     </p>
                   </div>
@@ -183,36 +183,36 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="bg-slate-950 border border-slate-850 rounded-[24px] p-6 shadow-xl text-left text-xs z-10"
+                className="bg-white border border-slate-200/80 rounded-[24px] p-6 shadow-xl shadow-cyan-500/5 text-left text-xs z-10"
               >
-                <div className="flex items-center justify-between pb-3.5 border-b border-slate-850 mb-5">
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-5">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-teal-500" />
-                    <span className="font-bold text-white">Clinical Board</span>
+                    <span className="h-2 w-2 rounded-full bg-cyan-500" />
+                    <span className="font-extrabold text-slate-900">Clinical Board</span>
                   </div>
-                  <span className="text-[10px] text-slate-500">Dr. Olivia Vance</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Dr. Olivia Vance</span>
                 </div>
 
                 <div className="space-y-4">
                   {/* Pending Queue */}
                   <div className="space-y-2">
-                    <span className="text-[9px] text-slate-500 block uppercase font-bold">Incoming Evaluators</span>
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                    <span className="text-[9px] text-slate-400 block uppercase font-bold tracking-wider">Incoming Evaluators</span>
+                    <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-6 w-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-[9px]">PT</div>
+                        <div className="h-6 w-6 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center font-bold text-[9px]">PT</div>
                         <div className="flex flex-col">
-                          <span className="text-white font-bold text-[11px]">Johnathan Doe</span>
-                          <span className="text-slate-500 text-[8px]">Stress Symptoms</span>
+                          <span className="text-slate-900 font-bold text-[11px]">Johnathan Doe</span>
+                          <span className="text-slate-400 text-[8px]">Stress Symptoms</span>
                         </div>
                       </div>
-                      <span className="text-[9px] text-teal-400 font-bold bg-teal-950/40 border border-teal-900/40 px-2.5 py-1 rounded">VERIFY</span>
+                      <span className="text-[9px] text-cyan-700 font-bold bg-cyan-100 border border-cyan-200 px-2.5 py-1 rounded">VERIFY</span>
                     </div>
                   </div>
 
                   {/* Actions summary */}
-                  <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex justify-between items-center text-[10px]">
-                    <span className="text-slate-400">Total verified today:</span>
-                    <span className="text-white font-black">14 Patients</span>
+                  <div className="bg-slate-50 border border-slate-200/70 p-3 rounded-xl flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500 font-medium">Total verified today:</span>
+                    <span className="text-slate-900 font-black">14 Patients</span>
                   </div>
                 </div>
               </motion.div>
@@ -235,7 +235,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
               variants={fadeInUp}
               className="max-w-2xl mx-auto text-center mb-16 space-y-4"
             >
-              <span className="text-xs font-bold uppercase tracking-widest text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-700 bg-cyan-50/70 px-3.5 py-1 rounded-full">
                 COMPARATIVE PERFORMANCE
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -256,10 +256,10 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
             >
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="bg-slate-900 text-white font-black text-sm uppercase tracking-wider">
+                  <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-900 font-extrabold text-sm uppercase tracking-wider">
                     <th className="p-6">Healthcare Feature</th>
-                    <th className="p-6 border-l border-slate-800">Traditional Healthcare</th>
-                    <th className="p-6 border-l border-slate-800 text-teal-400">MediAI Platform</th>
+                    <th className="p-6 border-l border-slate-200/80 text-slate-500">Traditional Healthcare</th>
+                    <th className="p-6 border-l border-slate-200/80 text-cyan-600 bg-cyan-50/50">MediAI Platform</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold text-xs sm:text-sm">
@@ -273,7 +273,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                     <tr key={idx} className="hover:bg-slate-50 transition-colors duration-250">
                       <td className="p-6 font-bold text-slate-900">{row.feature}</td>
                       <td className="p-6 text-slate-400 font-medium border-l border-slate-100">{row.traditional}</td>
-                      <td className="p-6 text-teal-600 font-black border-l border-slate-100 bg-teal-50/20">{row.mediai}</td>
+                      <td className="p-6 text-cyan-700 font-black border-l border-slate-100 bg-cyan-50/70/20">{row.mediai}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -299,7 +299,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
               variants={fadeInUp}
               className="max-w-2xl mx-auto text-center mb-20 space-y-4"
             >
-              <span className="text-xs font-bold uppercase tracking-widest text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-700 bg-cyan-50/70 px-3.5 py-1 rounded-full">
                 USER REVIEWS
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -348,7 +348,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                     visible: { opacity: 1, y: 0, transition: { delay: idx * 0.1, duration: 0.6 } }
                   }}
                   whileHover={{ y: -6 }}
-                  className="bg-white/45 backdrop-blur-md border border-slate-200/50 shadow-xl rounded-3xl p-8 flex flex-col justify-between min-h-[300px] hover:border-teal-500/20 hover:shadow-2xl transition-all duration-350 relative overflow-hidden"
+                  className="bg-white/45 backdrop-blur-md border border-slate-200/50 shadow-xl rounded-3xl p-8 flex flex-col justify-between min-h-[300px] hover:border-cyan-500/20 hover:shadow-2xl transition-all duration-350 relative overflow-hidden"
                 >
                   <Quote className="absolute top-6 right-6 h-12 w-12 text-slate-100/50 z-0" />
 
@@ -395,7 +395,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
               variants={fadeInUp}
               className="max-w-2xl mx-auto text-center mb-16 space-y-4"
             >
-              <span className="text-xs font-bold uppercase tracking-widest text-teal-600 bg-teal-50 px-3.5 py-1 rounded-full">
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-700 bg-cyan-50/70 px-3.5 py-1 rounded-full">
                 FAQ
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -413,16 +413,16 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                 return (
                   <div
                     key={idx}
-                    className="bg-white border border-slate-200/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:border-teal-500/20"
+                    className="bg-white border border-slate-200/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:border-cyan-500/20"
                   >
                     <button
                       onClick={() => setActiveFAQ(isActive ? null : idx)}
-                      className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-slate-900 hover:text-teal-600 transition-colors text-base"
+                      className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-slate-900 hover:text-cyan-700 transition-colors text-base"
                     >
                       <span>{item.question}</span>
                       <ChevronDown
                         size={18}
-                        className={`text-slate-400 transition-transform duration-300 ${isActive ? 'rotate-180 text-teal-500' : ''}`}
+                        className={`text-slate-400 transition-transform duration-300 ${isActive ? 'rotate-180 text-cyan-600' : ''}`}
                       />
                     </button>
 
@@ -472,7 +472,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
 
               <div className="flex flex-wrap gap-5 justify-center pt-4">
                 <Link href="/register">
-                  <Button className="bg-[#0F172A] hover:bg-teal-600 text-white font-extrabold px-8 py-7 rounded-full text-base tracking-wide shadow-xl shadow-slate-950/15 hover:shadow-teal-500/25 transition-all duration-350 cursor-pointer">
+                  <Button className="bg-[#0F172A] hover:bg-cyan-600 text-white font-extrabold px-8 py-7 rounded-full text-base tracking-wide shadow-xl shadow-slate-950/15 hover:shadow-cyan-500/25 transition-all duration-350 cursor-pointer">
                     Get Started Free
                   </Button>
                 </Link>

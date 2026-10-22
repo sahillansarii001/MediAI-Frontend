@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Activity, Eye, EyeOff } from "lucide-react"
+import Logo from "@/components/shared/Logo"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 
@@ -94,12 +95,7 @@ function LoginContent() {
         <div className="absolute top-0 left-0 w-full h-full opacity-30 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-teal-400 via-transparent to-transparent z-0" />
         
         {/* Top Brand */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-teal-400 to-emerald-500 shadow-lg">
-            <Activity className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-white">MediAI</span>
-        </div>
+        <Logo href="/" variant="light" />
 
         {/* Center Content */}
         <div className="relative z-10 max-w-md">
@@ -123,11 +119,8 @@ function LoginContent() {
         <div className="w-full max-w-sm flex flex-col justify-center">
           
           {/* Mobile Header (Only visible on small screens) */}
-          <div className="flex lg:hidden items-center justify-center gap-3 mb-10">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-emerald-600 shadow-md">
-              <Activity className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900">MediAI</span>
+          <div className="flex lg:hidden items-center justify-center mb-10">
+            <Logo href="/" />
           </div>
 
           <div className="mb-8">

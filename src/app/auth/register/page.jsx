@@ -8,6 +8,7 @@ import { Input, Label } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Upload, CheckCircle2, Clock, XCircle, AlertCircle, Image as ImageIcon, FileText, Eye, EyeOff, X } from "lucide-react"
+import Logo from "@/components/shared/Logo"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
@@ -459,12 +460,9 @@ function RegisterContent() {
         </div>
         
         <div className="relative z-10 p-16 flex flex-col items-start max-w-2xl">
-          <Link href="/" className="flex items-center gap-3 mb-12 group">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-teal-400 to-teal-600 shadow-lg shadow-teal-500/30 group-hover:scale-105 transition-transform">
-              <Activity className="h-7 w-7 text-white" />
-            </div>
-            <span className="text-3xl font-extrabold tracking-tight text-white">MediAI</span>
-          </Link>
+          <div className="mb-12">
+            <Logo href="/" variant="light" imageClassName="h-10 w-10" textClassName="text-3xl font-extrabold" />
+          </div>
           
           <h1 className="text-5xl font-bold text-white leading-[1.15] tracking-tight mb-6">
             Join the future of <br />
@@ -482,13 +480,8 @@ function RegisterContent() {
       {/* Right side - Form */}
       <div className="w-full lg:w-1/2 h-full flex flex-col relative overflow-y-auto">
         {/* Mobile Header */}
-        <div className="lg:hidden p-6 pb-0 flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-600">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">MediAI</span>
-          </Link>
+        <div className="lg:hidden p-6 pb-0 flex items-center">
+          <Logo href="/" imageClassName="h-8 w-8" textClassName="text-xl font-bold" />
         </div>
 
         <div className="flex-1 flex flex-col justify-center p-6 sm:p-12 lg:p-16">
