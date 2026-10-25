@@ -427,10 +427,10 @@ export default function SymptomChecker() {
                     </div>
                     <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
                       <Button asChild variant="outline" className="flex-1 h-9 text-xs border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800">
-                        <Link href={`/patient/doctors/${doctor._id}`}>View Profile</Link>
+                        <Link href={`/patient/doctor-recommendation?doctorId=${doctor._id}`}>View Profile</Link>
                       </Button>
                       <Button asChild className="flex-1 h-9 text-xs bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                        <Link href={`/patient/chat/${doctor._id}`}>Message</Link>
+                        <Link href={`/patient/chat?doctorId=${doctor._id}`}>Message</Link>
                       </Button>
                     </div>
                   </CardContent>
