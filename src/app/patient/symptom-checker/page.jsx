@@ -1,9 +1,15 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { ChatWindow } from "@/components/shared/ChatWindow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity, Plus, AlertCircle, Stethoscope, Calendar, MessageSquare, History, Trash2 } from "lucide-react";
+import { 
+  Activity, Plus, AlertCircle, Stethoscope, Calendar, MessageSquare, 
+  History, Trash2, Sparkles, ShieldAlert, CheckCircle2, ChevronRight, 
+  Pill, Clock, Star, PhoneCall, AlertTriangle, ArrowRight, UserCheck,
+  FileText, Zap, HelpCircle, Shield
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -13,8 +19,13 @@ export default function SymptomChecker() {
   const initialMessages = [
     {
       sender: "ai",
-      content: "Hello! I'm your MediAI medical assistant. Please describe the symptoms you're experiencing, and I'll help you assess them.",
-      options: ["I have a headache", "My stomach hurts", "I have a fever and cough"]
+      content: "Hello! I am your MediAI Clinical Triage Assistant. Please describe what you are experiencing, including how long you've felt this way and how severe it is. I will evaluate your symptoms against medical protocols and provide an instant risk assessment.",
+      options: [
+        "Severe throbbing headache with nausea",
+        "Persistent chest tightness and shortness of breath",
+        "High fever with dry cough and body chills",
+        "Sharp abdominal pain after eating"
+      ]
     }
   ];
 
@@ -112,13 +123,16 @@ export default function SymptomChecker() {
       if (res.data.success) {
         setFetchedDoctors(res.data.data);
         setShowDoctorCards(true);
-        setMessages(prev => [...prev, { sender: "ai", content: `Great choice! Here are the recommended ${spec} doctors available on our platform. You can book an appointment or start a chat directly.` }]);
+        setMessages(prev => [...prev, { 
+          sender: "ai", 
+          content: `Matching complete. Found ${res.data.data.length} credentialed ${spec} specialist(s) on-call. Review their clinical qualifications in the diagnostic panel to consult directly.` 
+        }]);
       } else {
         throw new Error(res.data.message || "Failed to fetch doctors");
       }
     } catch (err) {
       console.error("Fetch doctors error:", err);
-      setMessages(prev => [...prev, { sender: "ai", content: "Sorry, I couldn't load the doctors right now. Please try again later." }]);
+      setMessages(prev => [...prev, { sender: "ai", content: "Unable to retrieve on-duty physicians right now. Please try again or head to the Doctor Directory." }]);
     } finally {
       setIsFindingDoctors(false);
     }
@@ -128,7 +142,6 @@ export default function SymptomChecker() {
     setError("");
     const lowerContent = content.toLowerCase();
     const triggerWords = ["consult", "doctor", "appointment", "find a doctor", "book"];
-    // If they mention consulting or doctors after an assessment is ready
     const hasTriggerWord = (lowerContent.includes("consult") && lowerContent.includes("doctor")) || 
                            lowerContent.includes("book appointment") || 
                            lowerContent.includes("find a doctor");
@@ -140,7 +153,6 @@ export default function SymptomChecker() {
     setIsTyping(true);
     let imageUrl = uploadedImageUrl;
 
-    // If a new image file was passed, upload it first
     if (imageFile) {
       const formData = new FormData();
       formData.append('image', imageFile);
@@ -157,7 +169,7 @@ export default function SymptomChecker() {
         }
       } catch (err) {
         console.error("Upload Error:", err);
-        setError("Image upload failed. Please try again.");
+        setError("Clinical image upload failed. Please try again.");
         setIsTyping(false);
         return;
       }
@@ -166,7 +178,6 @@ export default function SymptomChecker() {
     setUploadedImageUrl(null);
     setUploadKey(prev => prev + 1);
 
-    // Build user message — show image preview bubble if image attached
     const userMsg = imageUrl
       ? { sender: "user", content, imageUrl }
       : { sender: "user", content };
@@ -176,6 +187,7 @@ export default function SymptomChecker() {
       role: m.sender === 'ai' ? 'assistant' : 'user',
       content: m.content
     }));
+
     try {
       const res = await api.post('/ai/symptom-check', {
         symptoms: content,
@@ -183,23 +195,25 @@ export default function SymptomChecker() {
         mode: continueMode ? 'continue_ai' : 'assess',
         ...(imageUrl ? { imageUrl } : {})
       });
+
       if (res.data.success && res.data.data) {
         const aiResponse = res.data.data;
         if (continueMode) {
           if (aiResponse.urgentDoctorNeeded) {
             const urgentMsg = aiResponse.emergencyWarning
               ? `⚠️ ${aiResponse.emergencyWarning}`
-              : "⚠️ Based on your symptoms, I strongly recommend seeking urgent medical help immediately. Please do not delay medical care.";
+              : "⚠️ Your symptoms indicate potentially acute condition progression. Seek urgent physician attention immediately.";
             setMessages(prev => [...prev, { sender: "ai", content: urgentMsg }]);
             if (aiResponse.recommendedSpecialization) {
               setAnalysisData(prev => ({ ...prev, recommendedSpecialization: aiResponse.recommendedSpecialization }));
               handleConsultDoctor("I need urgent medical care", aiResponse.recommendedSpecialization);
             }
           } else {
-            setMessages(prev => [...prev, { sender: "ai", content: aiResponse.followUpQuestion || "I'm here to help. Please feel free to ask any health-related questions." }]);
+            setMessages(prev => [...prev, { sender: "ai", content: aiResponse.followUpQuestion || "I am analyzing your follow-up inquiry. Feel free to ask more details about your recovery, care guidelines, or triggers." }]);
           }
           return;
         }
+
         const isAssessmentComplete = (aiResponse.isAssessmentReady === true || (!aiResponse.followUpQuestion && aiResponse.possibleCondition)) && (aiResponse.possibleCondition && aiResponse.riskLevel);
 
         if (!isAssessmentComplete && aiResponse.followUpQuestion) {
@@ -208,20 +222,19 @@ export default function SymptomChecker() {
           setAnalysisData(aiResponse);
           setShowAnalysis(true);
           const choiceMsg = aiResponse.riskLevel === 'High' || aiResponse.riskLevel === 'Critical'
-            ? `Based on your symptoms, I've identified a possible condition with ${aiResponse.riskLevel} risk. Given the severity, I strongly recommend consulting a doctor. However, you can also continue with AI guidance — but please do not delay professional medical care.\n\nWould you like to consult a doctor on the platform, or continue with AI guidance for now?`
-            : `Thank you for the details. Based on your symptoms, I've generated an initial assessment (see the panel on the right).\n\nWould you like to consult a doctor on the platform, or continue with AI guidance for now?`;
+            ? `Clinical assessment complete. Symptoms reflect a possible ${aiResponse.riskLevel} risk condition. The detailed diagnostic report is now available in your clinical review panel.\n\nWould you like to connect with a verified specialist now, or continue asking questions?`
+            : `Initial clinical assessment complete. Review the diagnostic breakdown in your side panel.\n\nWould you like to connect with an on-duty specialist or continue with AI guidance?`;
           setMessages(prev => [...prev, { sender: "ai", content: choiceMsg }]);
           setShowChoiceButtons(true);
         } else {
-          // Fallback if no follow-up was provided but assessment isn't complete yet
-          setMessages(prev => [...prev, { sender: "ai", content: aiResponse.followUpQuestion || "Could you provide more details about how long you've had this symptom and how severe it feels on a scale of 1 to 10?" }]);
+          setMessages(prev => [...prev, { sender: "ai", content: aiResponse.followUpQuestion || "Could you specify the exact duration and if the symptoms are accompanied by fever, dizziness, or sharp pain?" }]);
         }
       } else {
-        throw new Error("Invalid AI response");
+        throw new Error("Invalid AI triage response");
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
-      setMessages(prev => [...prev, { sender: "ai", content: `Error: ${errorMessage}. Please check your AI API key or connection.` }]);
+      setMessages(prev => [...prev, { sender: "ai", content: `Error during triage: ${errorMessage}. Please check your connection or retry.` }]);
     } finally {
       setIsTyping(false);
     }
@@ -233,11 +246,11 @@ export default function SymptomChecker() {
     setShowDoctorCards(false);
     const isHighRisk = analysisData?.riskLevel === 'High' || analysisData?.riskLevel === 'Critical';
     const continueMsg = isHighRisk
-      ? "I understand you'd like to continue with AI guidance. I'll do my best to help, but because your symptoms may be serious, I strongly recommend you do not delay seeking professional medical care.\n\nHow can I help you further? Feel free to ask questions about your symptoms, what to monitor, or general care advice."
-      : "Sure! I'll continue to guide you. You can ask me about your symptoms, what to watch for, general care tips, or any health-related questions.\n\nRemember, if your symptoms worsen or new concerning symptoms appear, please consult a doctor promptly.\n\nWhat would you like to know?";
+      ? "Understood. Continuing in guided AI advisory mode. Keep in mind: because your assessment indicated elevated risk, do not hesitate to contact emergency care or see a physician if symptoms worsen.\n\nWhat other questions or concerns can I answer for you?"
+      : "Continuing with AI health advisory. You can ask for OTC home-care tips, warning signs to watch for, or advice on recovery routines.\n\nWhat would you like to explore next?";
     setMessages(prev => [...prev,
-    { sender: "user", content: "Continue with AI guidance" },
-    { sender: "ai", content: continueMsg }
+      { sender: "user", content: "Continue with AI guidance" },
+      { sender: "ai", content: continueMsg }
     ]);
   };
 
@@ -256,221 +269,353 @@ export default function SymptomChecker() {
     setSessionId(Date.now().toString());
   };
 
-  // Receives real Cloudinary URL from MediaUploadButton after successful backend upload
-  const handleUpload = (url) => {
-    setUploadedImageUrl(url);
+  const getRiskBadgeStyles = (risk) => {
+    switch (risk?.toLowerCase()) {
+      case 'critical':
+      case 'high':
+        return 'bg-red-500/10 text-red-600 border-red-200 ring-1 ring-red-500/20';
+      case 'moderate':
+      case 'medium':
+        return 'bg-amber-500/10 text-amber-600 border-amber-200 ring-1 ring-amber-500/20';
+      default:
+        return 'bg-emerald-500/10 text-emerald-600 border-emerald-200 ring-1 ring-emerald-500/20';
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
-      {/* Main Chat Area */}
-      <div className={`flex flex-col h-130 md:h-full transition-all duration-300 ${showAnalysis ? 'w-full md:w-7/12 lg:w-8/12' : 'w-full'}`}>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            {error}
+    <div className="space-y-5 animate-in fade-in duration-300">
+      {/* Modern Clinical Header Bar */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-teal-950 via-slate-900 to-indigo-950 p-6 text-white shadow-xl border border-teal-800/40">
+        <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-300 text-xs font-semibold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-teal-300 animate-pulse" />
+              AI Clinical Triage • Multi-Model Engine (Groq & Gemini)
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+              Intelligent Symptom Checker
+            </h1>
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              Describe your symptoms naturally or upload lab/clinical images. Our medical triage system analyzes symptom markers, calculates risk scores, and routes you to on-duty specialists.
+            </p>
           </div>
-        )}
-        <ChatWindow
-          title="AI Symptom Checker"
-          subtitle="Get an initial assessment based on your symptoms"
-          messages={messages}
-          isTyping={isTyping}
-          onSendMessage={handleSendMessage}
-          disabled={showChoiceButtons || isTyping}
-          headerRight={
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-2">
-                <History className="h-4 w-4" /> History
+          <div className="flex items-center gap-2 self-start md:self-center shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsHistoryOpen(true)}
+              className="border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-200 font-medium text-xs h-10 px-4 rounded-xl transition-all"
+            >
+              <History className="h-4 w-4 mr-1.5 text-teal-400" /> Triage History
+            </Button>
+            <Button
+              size="sm"
+              onClick={startNewChat}
+              className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs h-10 px-4 rounded-xl shadow-lg shadow-teal-500/25 transition-all"
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> New Assessment
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Two-Column Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 min-h-[620px] lg:h-[calc(100vh-16rem)]">
+        {/* Left Column: Interactive Chat Interface */}
+        <div className={`flex flex-col h-140 lg:h-full transition-all duration-300 ${showAnalysis || showDoctorCards ? 'w-full lg:w-7/12 xl:w-7/12' : 'w-full'}`}>
+          {error && (
+            <div className="mb-3 p-3.5 bg-red-50 text-red-800 text-xs rounded-2xl border border-red-200 flex items-center gap-2.5 shadow-xs">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex-1 bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
+            <ChatWindow
+              title="Medical Symptom Dialogue"
+              subtitle="Confidential, end-to-end clinical AI consultation"
+              messages={messages}
+              isTyping={isTyping}
+              onSendMessage={handleSendMessage}
+              disabled={showChoiceButtons || isTyping}
+              placeholder="Describe your symptoms (e.g. sharp headache for 2 days, mild dizziness)..."
+            />
+          </div>
+
+          {/* Action Choice Strip */}
+          {showChoiceButtons && (
+            <div className="mt-4 p-4 rounded-2xl bg-white border border-teal-200/80 shadow-md shadow-teal-500/5 flex flex-wrap gap-3 animate-in slide-in-from-bottom-2 duration-300">
+              <Button
+                className="flex-1 h-11 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl gap-2 shadow-md shadow-teal-600/20 min-w-36 transition-all"
+                onClick={() => handleConsultDoctor("Find Verified Doctors")}
+              >
+                <Stethoscope className="h-4 w-4" /> Find Doctors
               </Button>
-              <Button variant="outline" size="sm" onClick={startNewChat} className="gap-2">
-                <Plus className="h-4 w-4" /> New Chat
+              <Button
+                className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl gap-2 shadow-md shadow-indigo-600/20 min-w-36 transition-all"
+                onClick={() => handleConsultDoctor("Book Clinical Appointment")}
+              >
+                <Calendar className="h-4 w-4" /> Book Appointment
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-11 border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl gap-2 min-w-36 transition-all"
+                onClick={handleContinueAI}
+              >
+                <MessageSquare className="h-4 w-4 text-teal-600" /> Continue with AI
               </Button>
             </div>
-          }
-        />
-        {/* Choice Buttons */}
-        {showChoiceButtons && (
-          <div className="flex gap-2 mt-3 px-4 animate-in slide-in-from-bottom-2 duration-300 flex-wrap">
-            <Button
-              className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white font-semibold gap-2 shadow-lg shadow-teal-100 min-w-35"
-              onClick={() => handleConsultDoctor("Find Doctors")}
-            >
-              <Stethoscope className="h-5 w-5" /> Find Doctors
-            </Button>
-            <Button
-              className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white font-semibold gap-2 shadow-lg shadow-teal-100 min-w-35"
-              onClick={() => handleConsultDoctor("Book Appointment")}
-            >
-              <Calendar className="h-5 w-5" /> Book Appointment
-            </Button>
-            <Button variant="outline" className="flex-1 h-12 border-slate-200 text-slate-700 font-semibold gap-2 hover:bg-slate-50 min-w-40" onClick={handleContinueAI}>
-              <MessageSquare className="h-5 w-5" /> Continue with AI
-            </Button>
+          )}
+        </div>
+
+        {/* Right Column: Diagnostic Intelligence & Specialist Roster Panel */}
+        {(showAnalysis || showDoctorCards) && (
+          <div className="w-full lg:w-5/12 xl:w-5/12 h-full overflow-y-auto space-y-4 animate-in slide-in-from-right fade-in pb-4 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+            
+            {/* View 1: Clinical Assessment Report */}
+            {showAnalysis && analysisData && !showDoctorCards && (
+              <div className="space-y-4">
+                {/* Risk Level Banner */}
+                <div className={`p-5 rounded-3xl border shadow-sm transition-all ${
+                  analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical'
+                    ? 'bg-red-50/80 border-red-200 text-red-950'
+                    : analysisData.riskLevel === 'Moderate' || analysisData.riskLevel === 'Medium'
+                      ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+                      : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                }`}>
+                  <div className="flex items-start gap-3.5">
+                    <div className={`p-2.5 rounded-2xl shrink-0 ${
+                      analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical'
+                        ? 'bg-red-100 text-red-700'
+                        : analysisData.riskLevel === 'Moderate' || analysisData.riskLevel === 'Medium'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider">Clinical Triage Score</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase ${getRiskBadgeStyles(analysisData.riskLevel)}`}>
+                          {analysisData.riskLevel} Risk
+                        </span>
+                      </div>
+                      <p className="text-xs leading-relaxed opacity-90 pt-1">
+                        Preliminary automated triage. Not a substitute for formal clinical laboratory analysis.
+                      </p>
+                      {analysisData.emergencyWarning && (
+                        <div className="mt-3 p-3 bg-red-100/90 border border-red-300 rounded-xl text-red-900 text-xs font-bold flex items-center gap-2">
+                          <ShieldAlert className="h-4 w-4 shrink-0 text-red-700" />
+                          <span>{analysisData.emergencyWarning}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary Diagnostic Findings Card */}
+                <div className="rounded-3xl bg-white border border-slate-200/80 p-6 shadow-xs space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-teal-600" />
+                      Diagnostic Breakdown
+                    </h3>
+                    <span className="text-[11px] font-semibold text-slate-400">ICD-10 Aligned</span>
+                  </div>
+
+                  {/* Possible Condition */}
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                      Identified Condition
+                    </span>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-semibold text-sm leading-relaxed">
+                      {analysisData.possibleCondition || "Condition analysis in progress"}
+                    </div>
+                  </div>
+
+                  {/* Recommended Specialist */}
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                      Recommended Specialist
+                    </span>
+                    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-teal-50/60 border border-teal-100">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                          <Stethoscope className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-bold text-teal-950">
+                          {analysisData.recommendedSpecialization || "General Medicine"}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleConsultDoctor("Find Verified Doctors")}
+                        className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8 px-3 rounded-lg font-bold shadow-xs"
+                      >
+                        View Specialists <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Prevention & Home Care Advice */}
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                      Clinical Care Guidelines
+                    </span>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                      {analysisData.preventionAdvice || "Maintain rest, stay hydrated, and monitor temperature."}
+                    </div>
+                  </div>
+
+                  {/* OTC Prescriptions & Suggestions */}
+                  {analysisData.suggestedPrescriptions && analysisData.suggestedPrescriptions.length > 0 && (
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2 flex items-center gap-1.5">
+                        <Pill className="h-3.5 w-3.5 text-teal-600" />
+                        Over-The-Counter (OTC) Considerations
+                      </span>
+                      <div className="space-y-2.5">
+                        {analysisData.suggestedPrescriptions.map((rx, idx) => (
+                          <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-900">{rx.name}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
+                                OTC
+                              </span>
+                            </div>
+                            <p className="text-slate-600 text-[11px] font-medium">{rx.dosage} • {rx.duration}</p>
+                            {rx.notes && <p className="text-slate-500 text-[11px] italic mt-0.5">{rx.notes}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <Button
+                      onClick={() => handleConsultDoctor("Consult a Doctor")}
+                      className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs h-11 rounded-xl shadow-lg shadow-teal-600/20"
+                    >
+                      <Stethoscope className="w-4 h-4 mr-2" /> Match With On-Call Doctors
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* View 2: On-Call Doctors Directory */}
+            {showDoctorCards && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                      <UserCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Matched Specialists</h3>
+                      <p className="text-xs text-slate-500">Verified physicians ready for consultation</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-teal-700 hover:text-teal-800 font-semibold"
+                    onClick={() => { setShowDoctorCards(false); setShowAnalysis(true); }}
+                  >
+                    View Report
+                  </Button>
+                </div>
+
+                {fetchedDoctors.length === 0 && !isFindingDoctors && (
+                  <div className="text-center p-8 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
+                    <Stethoscope className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-slate-700">No specialists found</p>
+                    <p className="text-xs text-slate-400 mt-1">Try searching all specialties or book a General Physician consultation.</p>
+                  </div>
+                )}
+
+                {fetchedDoctors.map(doctor => (
+                  <div 
+                    key={doctor._id}
+                    className="p-5 rounded-3xl bg-white border border-slate-200/80 hover:border-teal-300 hover:shadow-md transition-all shadow-xs space-y-4"
+                  >
+                    <div className="flex gap-3.5">
+                      <img
+                        src={doctor.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.fullName)}&background=0D9488&color=fff`}
+                        alt={doctor.fullName}
+                        className="w-13 h-13 rounded-2xl object-cover shrink-0 border border-slate-100 shadow-xs"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-slate-900 text-sm truncate">Dr. {doctor.fullName}</h4>
+                          <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
+                            ★ {doctor.rating || '4.8'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-teal-700 font-semibold mt-0.5">{doctor.specialization}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {doctor.experience ? `${doctor.experience} yrs clinical exp` : "Registered specialist"} • {doctor.hospitalName || "MediAI Clinical Hub"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                      <span className="text-slate-500 font-medium">Consultation Fee</span>
+                      <span className="font-black text-slate-900 text-sm">
+                        ₹{doctor.consultationFee || 299}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2.5 pt-1">
+                      <Link href={`/patient/doctors/${doctor._id}`} className="flex-1">
+                        <Button variant="outline" className="w-full h-9 text-xs font-semibold rounded-xl border-slate-200 hover:bg-slate-50">
+                          Profile
+                        </Button>
+                      </Link>
+                      <Link href={`/patient/chat/${doctor._id}`} className="flex-1">
+                        <Button className="w-full h-9 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-xs">
+                          Start Consult
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Right Panel */}
-      {(showAnalysis || showDoctorCards) && (
-        <div className="w-full md:w-5/12 lg:w-4/12 h-full overflow-y-auto space-y-4 animate-in slide-in-from-right fade-in pb-4 pr-1 scrollbar-thin scrollbar-thumb-slate-200">
-
-          {/* Analysis View */}
-          {showAnalysis && analysisData && !showDoctorCards && (
-            <div className="space-y-4">
-              <Card className={`border-${analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical' ? 'red' : 'amber'}-200 bg-${analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical' ? 'red' : 'amber'}-50 shadow-sm`}>
-                <CardContent className="p-4 flex gap-3">
-                  <AlertCircle className={`h-5 w-5 text-${analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical' ? 'red' : 'amber'}-600 shrink-0 mt-0.5`} />
-                  <div>
-                    <h3 className={`font-semibold text-${analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical' ? 'red' : 'amber'}-900 text-sm`}>Initial Assessment (Risk: {analysisData.riskLevel})</h3>
-                    <p className={`text-xs text-${analysisData.riskLevel === 'High' || analysisData.riskLevel === 'Critical' ? 'red' : 'amber'}-800 mt-1`}>This is an AI-generated assessment and not a definitive medical diagnosis. Please consult a doctor for confirmation.</p>
-                    {analysisData.emergencyWarning && (
-                      <p className="text-xs font-bold text-red-700 mt-2 bg-red-100 p-2 rounded border border-red-200">WARNING: {analysisData.emergencyWarning}</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm border-slate-200">
-                <CardContent className="p-4 space-y-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-1.5">
-                      <Activity className="h-4 w-4 text-teal-600" />
-                      Possible Condition
-                    </h4>
-                    <p className="text-sm text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
-                      {analysisData.possibleCondition || "Analysis not completed"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-1.5">
-                      <Stethoscope className="h-4 w-4 text-teal-600" />
-                      Recommended Specialist
-                    </h4>
-                    <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 font-medium px-2.5 py-0.5">
-                      {analysisData.recommendedSpecialization || "General Physician"}
-                    </Badge>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-1.5">
-                      <MessageSquare className="h-4 w-4 text-teal-600" />
-                      Prevention & Advice
-                    </h4>
-                    <p className="text-sm text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 whitespace-pre-wrap leading-relaxed">
-                      {analysisData.preventionAdvice || "No specific advice provided."}
-                    </p>
-                  </div>
-
-                  {analysisData.suggestedPrescriptions && analysisData.suggestedPrescriptions.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2 mb-2">
-                        <Activity className="h-4 w-4 text-teal-600" />
-                        Over-the-Counter (OTC) Suggestions
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysisData.suggestedPrescriptions.map((rx, idx) => (
-                          <li key={idx} className="text-sm bg-slate-50 p-3 rounded-lg border border-slate-100 flex flex-col gap-1">
-                            <div className="flex justify-between items-start">
-                              <strong className="text-slate-800">{rx.name}</strong>
-                              <Badge variant="secondary" className="text-[10px] h-5 bg-slate-200 text-slate-600">OTC</Badge>
-                            </div>
-                            <span className="text-xs font-medium text-slate-600">{rx.dosage} • {rx.duration}</span>
-                            {rx.notes && <span className="text-xs text-slate-500 mt-1">{rx.notes}</span>}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Doctor Cards View */}
-          {showDoctorCards && (
-            <div className="space-y-3 pb-2">
-              <div className="sticky top-0 bg-[#FAFAFA] z-10 py-2 border-b border-slate-200 mb-4 flex items-center justify-between">
-                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                  <Stethoscope className="h-5 w-5 text-teal-600" /> Recommended Doctors
-                </h3>
-              </div>
-
-              {fetchedDoctors.length === 0 && !isFindingDoctors && (
-                <div className="text-center p-6 bg-slate-50 rounded-xl border border-slate-200">
-                  <p className="text-sm text-slate-500">No doctors found for this specialization at the moment.</p>
-                </div>
-              )}
-
-              {fetchedDoctors.map(doctor => (
-                <Card key={doctor._id} className="overflow-hidden hover:border-teal-300 transition-colors shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex gap-3">
-                      <img
-                        src={doctor.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.fullName)}&background=0D8ABC&color=fff`}
-                        alt={doctor.fullName}
-                        className="w-14 h-14 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-slate-900 text-sm truncate">Dr. {doctor.fullName}</h4>
-                        <p className="text-xs text-slate-500 truncate">{doctor.specialization} • {doctor.experience} yrs exp</p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-xs font-medium text-amber-600 flex items-center bg-amber-50 px-1.5 py-0.5 rounded">
-                            ★ {doctor.rating || '4.5'}
-                          </span>
-                          <span className="text-xs font-medium text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
-                            ₹{doctor.consultationFee}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100">
-                      <Button asChild variant="outline" className="flex-1 h-9 text-xs border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800">
-                        <Link href={`/patient/doctors/${doctor._id}`}>View Profile</Link>
-                      </Button>
-                      <Button asChild className="flex-1 h-9 text-xs bg-teal-600 hover:bg-teal-700 text-white shadow-sm">
-                        <Link href={`/patient/chat/${doctor._id}`}>Message</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              <Button
-                variant="ghost"
-                className="w-full mt-4 text-slate-500 hover:text-teal-600 text-sm"
-                onClick={() => { setShowDoctorCards(false); setShowAnalysis(true); }}
-              >
-                Back to Analysis Report
-              </Button>
-            </div>
-          )}
-
-        </div>
-      )}
-
-      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Chat History">
+      {/* History Modal */}
+      <Modal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} title="Clinical Assessment History">
         {chatHistory.length === 0 ? (
-          <p className="text-slate-500 text-center py-8">No past chats found.</p>
+          <div className="text-center py-10">
+            <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-600">No triage sessions logged yet</p>
+            <p className="text-xs text-slate-400 mt-0.5">Completed assessments and symptom checkups will be saved here.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
             {chatHistory.map(session => (
               <div
                 key={session.id}
                 onClick={() => loadSession(session)}
-                className={`p-3 rounded-lg border cursor-pointer hover:bg-slate-50 transition-colors flex justify-between items-start gap-4 ${session.id === sessionId ? 'border-teal-500 bg-teal-50/50' : 'border-slate-200'}`}
+                className={`p-4 rounded-2xl border cursor-pointer hover:bg-slate-50 transition-all flex items-center justify-between gap-4 ${
+                  session.id === sessionId ? 'border-teal-500 bg-teal-50/40 ring-1 ring-teal-500/20' : 'border-slate-200'
+                }`}
               >
                 <div className="flex-1 overflow-hidden">
-                  <h4 className="text-sm font-semibold text-slate-800 truncate">{session.title}</h4>
-                  <p className="text-xs text-slate-500 mt-1">{new Date(session.date).toLocaleString()}</p>
+                  <h4 className="text-sm font-bold text-slate-900 truncate">{session.title}</h4>
+                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> {new Date(session.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                  </p>
                 </div>
                 <button
                   onClick={(e) => deleteSession(session.id, e)}
-                  className="text-slate-400 hover:text-red-500 shrink-0 p-1 rounded hover:bg-red-50"
-                  title="Delete chat"
+                  className="w-8 h-8 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors shrink-0"
+                  title="Delete assessment"
                 >
-                  <span className="sr-only">Delete</span>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
