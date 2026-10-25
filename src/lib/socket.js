@@ -19,7 +19,7 @@ export function getSocket() {
   if (!socketInstance) {
     socketInstance = io(socketUrl, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
