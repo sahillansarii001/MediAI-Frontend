@@ -25,19 +25,27 @@ export default function PatientLayout({ children }) {
   const notifAudioRef = useRef(null);
   const notifTimers = useRef([]);
 
-  // Preload notification audio on mount
+  // Preload notification audio on mount safely in browser
   useEffect(() => {
-    notifAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-    notifAudioRef.current.load();
+    if (typeof window !== 'undefined') {
+      try {
+        notifAudioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+        notifAudioRef.current.load();
+      } catch (err) {
+        console.warn("Audio preload error:", err);
+      }
+    }
   }, []);
 
   // Play sound when incoming consultation request arrives
   useEffect(() => {
-    if (incomingDoctorRequest && !pathname.includes(incomingDoctorRequest._id)) {
-      try {
-        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-        audio.play().catch(e => console.log('Audio error:', e));
-      } catch (err) {}
+    if (incomingDoctorRequest && !pathname?.includes(incomingDoctorRequest._id)) {
+      if (typeof window !== 'undefined') {
+        try {
+          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+          audio.play().catch(e => console.log('Audio error:', e));
+        } catch (err) {}
+      }
     }
   }, [incomingDoctorRequest, pathname])
 
