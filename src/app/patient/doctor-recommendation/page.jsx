@@ -99,7 +99,7 @@ export default function DoctorRecommendation() {
     setIsProcessingPayment(false);
     
     if (paid) {
-      router.push(`/patient/chat?doctorId=${pendingDoctorId}&chatId=${pendingChatId}`);
+      router.push(`/patient/chat?chatId=${pendingChatId}`);
     } else {
       alert("Payment failed. Please try again.");
     }
@@ -157,6 +157,11 @@ export default function DoctorRecommendation() {
     socket.on("doctorStatusChanged", handleDoctorStatus);
     socket.on("consultationResponded", handleConsultationResponded);
 
+    const handleCustomResponded = (e) => {
+      if (e.detail) handleConsultationResponded(e.detail);
+    };
+    window.addEventListener("consultationResponded", handleCustomResponded);
+
     if (socket.connected && (user?._id || user?.id)) {
       socket.emit("joinRoom", `patient_${user._id || user.id}`);
     }
@@ -165,8 +170,38 @@ export default function DoctorRecommendation() {
       socket.off("connect", handleConnect);
       socket.off("doctorStatusChanged", handleDoctorStatus);
       socket.off("consultationResponded", handleConsultationResponded);
+      window.removeEventListener("consultationResponded", handleCustomResponded);
     };
   }, [user]);
+
+  // Polling fallback when waiting for doctor response to guarantee no infinite spinner
+  useEffect(() => {
+    let interval;
+    if (isWaitingForDoctor && pendingChatId) {
+      interval = setInterval(async () => {
+        try {
+          const res = await api.get(`/chats/${pendingChatId}`);
+          if (res.data.success && res.data.data) {
+            const chat = res.data.data;
+            if (chat.status === 'active' || chat.status === 'accepted') {
+              setConsultationModalOpen(false);
+              setIsWaitingForDoctor(false);
+              setPaymentModalOpen(true);
+              clearInterval(interval);
+            } else if (chat.status === 'ended' || chat.status === 'rescheduled') {
+              setIsWaitingForDoctor(false);
+              setConsultationModalOpen(false);
+              clearInterval(interval);
+              alert("The doctor could not accept your request at this time.");
+            }
+          }
+        } catch (err) {
+          // Ignore polling errors
+        }
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isWaitingForDoctor, pendingChatId]);
 
   const filteredDoctors = doctors.filter((doc) => {
     const matchesSearch =

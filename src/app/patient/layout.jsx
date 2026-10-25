@@ -131,6 +131,12 @@ export default function PatientLayout({ children }) {
         );
       });
 
+      patientSocket.on("consultationResponded", (chat) => {
+        window.dispatchEvent(
+          new CustomEvent("consultationResponded", { detail: chat }),
+        );
+      });
+
       patientSocket.on("doctorChatRequest", (chatData) => {
         console.log(
           `[Socket] Patient received doctorChatRequest event:`,
@@ -257,6 +263,7 @@ export default function PatientLayout({ children }) {
       if (socket) {
         socket.off("connect");
         socket.off("appointmentCancelled");
+        socket.off("consultationResponded");
         socket.off("doctorChatRequest");
         socket.off("userProfileUpdated");
         socket.off("orderStatusUpdated");

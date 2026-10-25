@@ -48,33 +48,37 @@ export default function DoctorChat() {
     }
   }
 
-  // One-time chat initialization when doctorId changes
+  // One-time chat initialization when doctorId or chatId changes
   useEffect(() => {
-    if (!doctorId) return
+    if (!doctorId && !chatIdParam) return
 
     const initializeChat = async () => {
       try {
         setIsLoading(true)
-        const docRes = await api.get(`/doctors/${doctorId}`)
-        setDoctor(docRes.data.data)
 
         let chatData;
         if (chatIdParam) {
-          console.log(`[Chat Initialization] Loading existing chat with ID: ${chatIdParam}`);
           const chatRes = await api.get(`/chats/${chatIdParam}`);
           chatData = chatRes.data.data;
-        } else {
-          // Request or get existing chat (ONLY ONCE!)
+          if (chatData?.doctor) {
+            setDoctor(chatData.doctor);
+          }
+        } else if (doctorId) {
+          const docRes = await api.get(`/doctors/${doctorId}`)
+          setDoctor(docRes.data.data)
+
           const isResuming = searchParams.get('resume') === 'true'
-          console.log(`[Chat Request] patient clicked Start Chat with doctorId: ${doctorId}, resume: ${isResuming}`)
           const chatRes = await api.post('/chats/request', { doctorId, resume: isResuming })
           chatData = chatRes.data.data
         }
+
+        if (!chatData) return;
 
         setChat(chatData)
         const formatted = (chatData.messages || []).map(m => ({
           sender: m.senderModel === 'Doctor' ? 'doctor' : 'user',
           content: m.content,
+          imageUrl: m.imageUrl,
           timestamp: m.timestamp,
           _id: m._id
         }))
@@ -83,13 +87,16 @@ export default function DoctorChat() {
         if (chatData.status === 'ended') setConsultationEnded(true)
 
         // Fetch chat history with this doctor
-        try {
-          const historyRes = await api.get(`/chats/patient/history/${doctorId}`)
-          if (historyRes.data.success) {
-            setChatHistory(historyRes.data.data)
+        const activeDocId = doctorId || chatData.doctor?._id || chatData.doctor
+        if (activeDocId) {
+          try {
+            const historyRes = await api.get(`/chats/patient/history/${activeDocId}`)
+            if (historyRes.data.success) {
+              setChatHistory(historyRes.data.data)
+            }
+          } catch (historyErr) {
+            console.error("Failed to fetch chat history:", historyErr)
           }
-        } catch (historyErr) {
-          console.error("Failed to fetch chat history:", historyErr)
         }
       } catch (err) {
         toast.error(err.response?.data?.message || "Failed to initialize chat")
@@ -99,7 +106,7 @@ export default function DoctorChat() {
     }
 
     initializeChat()
-  }, [doctorId, searchParams])
+  }, [doctorId, chatIdParam, searchParams])
 
   // Auto-open history modal when chatId param is present (e.g. from follow-up notification) or redirect to active chat
   useEffect(() => {
