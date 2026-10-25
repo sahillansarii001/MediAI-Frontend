@@ -212,15 +212,15 @@ export default function PatientLayout({ children }) {
 
     return () => {
       // Remove listeners on unmount without tearing down socket connection
-      if (socket) {
-        socket.off("connect");
-        socket.off("appointmentCancelled");
-        socket.off("doctorChatRequest");
-        socket.off("userProfileUpdated");
-        socket.off("orderStatusUpdated");
-        socket.off("orderDeletedPatient");
-        socket.off("medicineStockUpdated");
-        socket.off("doctorFollowUp");
+      if (patientSocket) {
+        patientSocket.off("connect");
+        patientSocket.off("appointmentCancelled");
+        patientSocket.off("doctorChatRequest");
+        patientSocket.off("userProfileUpdated");
+        patientSocket.off("orderStatusUpdated");
+        patientSocket.off("orderDeletedPatient");
+        patientSocket.off("medicineStockUpdated");
+        patientSocket.off("doctorFollowUp");
       }
     };
   }, [isReady, role, patientId]);
