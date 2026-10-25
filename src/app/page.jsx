@@ -941,7 +941,7 @@ export default function ProfessionalLandingPage() {
                 <li><span className="hover:text-white transition-colors cursor-pointer">Physician Onboarding</span></li>
                 <li><span className="hover:text-white transition-colors cursor-pointer">Hospital Integrations</span></li>
                 <li><span className="hover:text-white transition-colors cursor-pointer">Emergency Dispatch API</span></li>
-                <li><span className="text-teal-400 font-mono">support@mediai.health</span></li>
+                <li><span className="text-teal-400 font-mono">mediaiofficial@gmail.com</span></li>
               </ul>
             </div>
           </div>

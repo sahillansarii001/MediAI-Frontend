@@ -40,7 +40,7 @@ export default function SuperAdminSettings() {
 
   // Platform Settings
   const [platformName, setPlatformName] = useState("MediAI Ecosystem")
-  const [supportEmail, setSupportEmail] = useState("support@mediai.com")
+  const [supportEmail, setSupportEmail] = useState("mediaiofficial@gmail.com")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [registrationOpen, setRegistrationOpen] = useState(true)
 
