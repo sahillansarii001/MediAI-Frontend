@@ -63,10 +63,12 @@ export default function PatientLayout({ children }) {
 
   // Socket.io Setup for Patient Notifications
   useEffect(() => {
+    let patientSocket = null;
+
     if (isReady && role === 'patient' && patientId) {
       const socket = getSocket();
       if (!socket) return;
-      const patientSocket = socket;
+      patientSocket = socket;
       setGlobalSocket(patientSocket);
 
       // Remove duplicate socket listeners before adding
