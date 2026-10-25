@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { Modal } from "@/components/ui/modal";
 import Link from "next/link";
-import { io } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/context/AuthContext";
 
 const CONSULTATION_PRICES = { chat: 99, voice: 199, video: 299 };
@@ -126,22 +126,22 @@ export default function DoctorRecommendation() {
 
   // Socket for live doctor status and chat acceptance
   useEffect(() => {
-    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace("/api", "");
-    const socket = io(socketUrl, { withCredentials: true, transports: ["websocket", "polling"] });
+    const socket = getSocket();
+    if (!socket) return;
     
-    socket.on("connect", () => {
+    const handleConnect = () => {
       if (user?._id || user?.id) {
         socket.emit("joinRoom", `patient_${user._id || user.id}`);
       }
-    });
+    };
 
-    socket.on("doctorStatusChanged", (data) => {
+    const handleDoctorStatus = (data) => {
       setDoctors((prev) =>
         prev.map((doc) => (doc._id === data.doctorId ? { ...doc, onlineStatus: data.status, breakExpiresAt: data.breakExpiresAt } : doc))
       );
-    });
+    };
 
-    socket.on("consultationResponded", (chat) => {
+    const handleConsultationResponded = (chat) => {
       if (chat.status === 'active' || chat.status === 'accepted') {
         setConsultationModalOpen(false);
         setIsWaitingForDoctor(false);
@@ -151,9 +151,21 @@ export default function DoctorRecommendation() {
         setConsultationModalOpen(false);
         alert("The doctor could not accept your request at this time.");
       }
-    });
+    };
 
-    return () => socket.disconnect();
+    socket.on("connect", handleConnect);
+    socket.on("doctorStatusChanged", handleDoctorStatus);
+    socket.on("consultationResponded", handleConsultationResponded);
+
+    if (socket.connected && (user?._id || user?.id)) {
+      socket.emit("joinRoom", `patient_${user._id || user.id}`);
+    }
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("doctorStatusChanged", handleDoctorStatus);
+      socket.off("consultationResponded", handleConsultationResponded);
+    };
   }, [user]);
 
   const filteredDoctors = doctors.filter((doc) => {

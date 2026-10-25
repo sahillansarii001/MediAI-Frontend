@@ -11,7 +11,7 @@ import MediaUploadButton from "@/app/components/MediaUploadButton";
 
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 import { useAuth } from "@/context/AuthContext"
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
@@ -102,35 +102,47 @@ export default function DoctorChatSession() {
   useEffect(() => {
     const doctorId = user?._id || user?.id;
     if (!doctorId) return;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const socketUrl = apiBase.replace('/api', '');
-    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
-    socket.emit('joinRoom', `doctor_${doctorId}`);
-    socket.on('consultationEnded', (data) => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleConnect = () => {
+      socket.emit('joinRoom', `doctor_${doctorId}`);
+    };
+
+    const handleConsultationEnded = (data) => {
       if (data.chatId === chatId || data.chatId?.toString() === chatId) {
         toast(`${data.patientName || 'Patient'} has ended the consultation`, { icon: '🔔' });
-        // Refresh the chat state
         api.get(`/chats/${chatId}`).then(res => {
           setChat(res.data.data);
           fetchAllChats();
         }).catch(() => { });
       }
-    });
-    return () => socket.disconnect();
-  }, [chatId, user])
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('consultationEnded', handleConsultationEnded);
+    if (socket.connected) {
+      socket.emit('joinRoom', `doctor_${doctorId}`);
+    }
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('consultationEnded', handleConsultationEnded);
+    };
+  }, [chatId, user]);
 
   // Real-time chat messages and consultation status via socket
   useEffect(() => {
     if (!chatId || (chat && chat.status === 'ended')) return;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const socketUrl = apiBase.replace('/api', '');
-    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+    const socket = getSocket();
+    if (!socket) return;
     setChatSocket(socket);
 
-    socket.emit('joinRoom', `chat_${chatId}`);
-    console.log(`[Socket] Doctor joined chat room chat_${chatId}`);
+    const handleConnect = () => {
+      socket.emit('joinRoom', `chat_${chatId}`);
+    };
 
-    socket.on('messageReceived', (data) => {
+    const handleMessageReceived = (data) => {
       if (data.chatId === chatId) {
         setMessages(prev => {
           if (prev.some(m => m._id === data.message._id)) return prev;
@@ -143,19 +155,18 @@ export default function DoctorChatSession() {
           }];
         });
       }
-    });
+    };
 
-    socket.on('consultationEnded', (data) => {
+    const handleConsultationEnded = (data) => {
       if (data.chatId === chatId) {
-        // Refresh the chat state and sidebar
         api.get(`/chats/${chatId}`).then(res => {
           setChat(res.data.data);
           fetchAllChats();
         }).catch(() => { });
       }
-    });
+    };
 
-    socket.on('chat_paid', (data) => {
+    const handleChatPaid = (data) => {
       if (data._id === chatId) {
         toast.success("Patient has paid. Chat is now active!");
         api.get(`/chats/${chatId}`).then(res => {
@@ -163,12 +174,22 @@ export default function DoctorChatSession() {
           fetchAllChats();
         }).catch(() => { });
       }
-    });
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('messageReceived', handleMessageReceived);
+    socket.on('consultationEnded', handleConsultationEnded);
+    socket.on('chat_paid', handleChatPaid);
+
+    if (socket.connected) {
+      socket.emit('joinRoom', `chat_${chatId}`);
+    }
 
     return () => {
-      console.log(`[Socket] Doctor disconnecting from chat room chat_${chatId}`);
-      socket.disconnect();
-      setChatSocket(null);
+      socket.off('connect', handleConnect);
+      socket.off('messageReceived', handleMessageReceived);
+      socket.off('consultationEnded', handleConsultationEnded);
+      socket.off('chat_paid', handleChatPaid);
     };
   }, [chatId, chat?.status]);
 
@@ -427,9 +448,9 @@ export default function DoctorChatSession() {
   const endedChats = allChats.filter(c => c.status === 'ended')
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
+    <div className="min-h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6">
       {/* Sidebar Area: Consultations List */}
-      <div className="hidden md:flex w-full md:w-3/12 h-full flex-col gap-4 overflow-hidden">
+      <div className="hidden lg:flex w-full lg:w-3/12 h-full flex-col gap-4 overflow-hidden">
         {/* Active Patient Card */}
         <Card className="bg-slate-900 text-white border-transparent shrink-0">
           <CardContent className="p-4">
@@ -551,7 +572,7 @@ export default function DoctorChatSession() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex flex-col h-full w-full md:w-6/12">
+      <div className="flex flex-col h-140 lg:h-full w-full lg:w-6/12 shrink-0">
         <ChatWindow
           title={chat.patient?.fullName || "Patient"}
           subtitle={`${chat.status === 'ended' ? 'Consultation Closed' : 'Online Consultation • Active'}`}
@@ -589,7 +610,7 @@ export default function DoctorChatSession() {
 
         {/* Follow-up composer for ended chats */}
         {chat.status === 'ended' && (
-          <div className="mt-3 shrink-0 rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-slate-50 p-4 shadow-sm">
+          <div className="mt-3 shrink-0 rounded-2xl border border-teal-200 bg-linear-to-br from-teal-50 to-slate-50 p-4 shadow-sm">
             <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" />
               Send Follow-up Message to Patient
@@ -624,7 +645,7 @@ export default function DoctorChatSession() {
       </div>
 
       {/* Right Sidebar: AI Diagnosis & Clinical Report */}
-      <div className="hidden lg:flex w-full md:w-3/12 h-full flex-col gap-4 overflow-y-auto pr-1">
+      <div className="flex w-full lg:w-3/12 h-auto lg:h-full flex-col gap-4 overflow-y-auto pr-1">
         {chat.status !== 'ended' ? (
           <>
             {/* Patient Vitals Card */}
@@ -635,8 +656,8 @@ export default function DoctorChatSession() {
                     <Activity className="h-4 w-4 text-teal-600 animate-pulse" /> Patient Vitals
                   </h4>
                   {latestVitals && (
-                    <Badge variant={latestVitals.source === 'smartwatch' ? 'teal' : 'outline'} className="text-[10px] capitalize">
-                      {latestVitals.source === 'smartwatch' ? 'Wearable Sync' : 'Manual Entry'}
+                    <Badge variant="teal" className="text-[10px] capitalize">
+                      Recorded Vitals
                     </Badge>
                   )}
                 </div>
@@ -801,17 +822,17 @@ export default function DoctorChatSession() {
                     <div className="pt-2">
                       <h3 className="text-sm font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
                         <span className="text-teal-600 font-serif text-3xl font-bold leading-none">Rx</span>
-                        <span className="translate-y-[2px]">Medicines & Directions</span>
+                        <span className="translate-y-0.5">Medicines & Directions</span>
                       </h3>
                       {isEditingReport ? (
                         <textarea
                           value={editedPrescription}
                           onChange={(e) => setEditedPrescription(e.target.value)}
-                          className="w-full text-sm p-4 sm:p-5 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent min-h-[160px] resize-none leading-relaxed text-slate-700 shadow-sm"
+                          className="w-full text-sm p-4 sm:p-5 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent min-h-40 resize-none leading-relaxed text-slate-700 shadow-sm"
                           placeholder="List medicines and dosages here..."
                         />
                       ) : (
-                        <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50/80 p-4 sm:p-5 rounded-xl border border-slate-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] min-h-[120px]">
+                        <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50/80 p-4 sm:p-5 rounded-xl border border-slate-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] min-h-30">
                           {report.prescription || "No prescription added."}
                         </div>
                       )}
@@ -820,17 +841,17 @@ export default function DoctorChatSession() {
                     {/* Clinical Summary */}
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-slate-400" /> <span className="translate-y-[1px]">Clinical Notes</span>
+                        <FileText className="h-4 w-4 text-slate-400" /> <span className="translate-y-px">Clinical Notes</span>
                       </h3>
                       {isEditingReport ? (
                         <textarea
                           value={editedDoctorNote}
                           onChange={(e) => setEditedDoctorNote(e.target.value)}
-                          className="w-full text-sm p-4 sm:p-5 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent min-h-[120px] resize-none leading-relaxed text-slate-700 shadow-sm"
+                          className="w-full text-sm p-4 sm:p-5 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent min-h-30 resize-none leading-relaxed text-slate-700 shadow-sm"
                           placeholder="Clinical summary and advice..."
                         />
                       ) : (
-                        <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50/80 p-4 sm:p-5 rounded-xl border border-slate-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] min-h-[100px]">
+                        <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50/80 p-4 sm:p-5 rounded-xl border border-slate-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] min-h-25">
                           {report.summary || "No clinical notes added."}
                         </div>
                       )}

@@ -122,35 +122,35 @@ export default function DoctorVerification() {
                     </div>
                   </div>
 
-                  <div className="flex-1 flex gap-4">
+                  <div className="flex-1 flex flex-wrap sm:flex-nowrap gap-3 sm:gap-4">
                     {doc.degreeCertificate ? (
-                      <a href={`http://localhost:5001/uploads/${doc.degreeCertificate}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
-                        <FileText className="h-8 w-8 text-indigo-500 mb-2" />
-                        <span className="text-sm font-medium">View Degree</span>
+                      <a href={doc.degreeCertificate.startsWith("http") ? doc.degreeCertificate : `${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000"}/uploads/${doc.degreeCertificate}`} target="_blank" rel="noreferrer" className="flex-1 min-w-30 p-3 sm:p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-colors">
+                        <FileText className="h-7 w-7 text-indigo-500 mb-1.5" />
+                        <span className="text-xs sm:text-sm font-medium">View Degree</span>
                       </a>
                     ) : (
-                      <div className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center opacity-50">
-                        <FileText className="h-8 w-8 text-slate-400 mb-2" />
-                        <span className="text-sm font-medium">No Degree</span>
+                      <div className="flex-1 min-w-30 p-3 sm:p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center opacity-50">
+                        <FileText className="h-7 w-7 text-slate-400 mb-1.5" />
+                        <span className="text-xs sm:text-sm font-medium">No Degree</span>
                       </div>
                     )}
 
                     {doc.governmentId ? (
-                      <a href={`http://localhost:5001/uploads/${doc.governmentId}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
-                        <FileText className="h-8 w-8 text-indigo-500 mb-2" />
-                        <span className="text-sm font-medium">View ID</span>
+                      <a href={doc.governmentId.startsWith("http") ? doc.governmentId : `${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000"}/uploads/${doc.governmentId}`} target="_blank" rel="noreferrer" className="flex-1 min-w-30 p-3 sm:p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-colors">
+                        <FileText className="h-7 w-7 text-indigo-500 mb-1.5" />
+                        <span className="text-xs sm:text-sm font-medium">View ID</span>
                       </a>
                     ) : (
-                      <div className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center opacity-50">
-                        <FileText className="h-8 w-8 text-slate-400 mb-2" />
-                        <span className="text-sm font-medium">No ID</span>
+                      <div className="flex-1 min-w-30 p-3 sm:p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center opacity-50">
+                        <FileText className="h-7 w-7 text-slate-400 mb-1.5" />
+                        <span className="text-xs sm:text-sm font-medium">No ID</span>
                       </div>
                     )}
 
                     {doc.medicalLicenseProof ? (
-                      <a href={`http://localhost:5001/uploads/${doc.medicalLicenseProof}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
-                        <FileText className="h-8 w-8 text-indigo-500 mb-2" />
-                        <span className="text-sm font-medium">View License</span>
+                      <a href={doc.medicalLicenseProof.startsWith("http") ? doc.medicalLicenseProof : `${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000"}/uploads/${doc.medicalLicenseProof}`} target="_blank" rel="noreferrer" className="flex-1 min-w-30 p-3 sm:p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-colors">
+                        <FileText className="h-7 w-7 text-indigo-500 mb-1.5" />
+                        <span className="text-xs sm:text-sm font-medium">View License</span>
                       </a>
                     ) : null}
                   </div>

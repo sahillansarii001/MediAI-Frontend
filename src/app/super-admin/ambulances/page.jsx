@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Ambulance, Search, Phone, CreditCard, Car, User, Shield, Sun, Moon, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 
 const STATUS_CONFIG = {
   available:   { label: "Available",   color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -40,25 +40,34 @@ export default function SuperAdminAmbulancesPage() {
     }
     fetchAmbulances()
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-    const socketUrl = apiBase.replace("/api", "")
-    const socket = io(socketUrl, { withCredentials: true, transports: ["websocket", "polling"] })
+    const socket = getSocket()
     socketRef.current = socket
 
-    socket.on("connect", () => socket.emit("joinRoom", "super_admin"))
+    const handleConnect = () => socket.emit("joinRoom", "super_admin")
+    if (socket.connected) handleConnect()
+    socket.on("connect", handleConnect)
 
-    socket.on("ambulance_added", (newAmb) => {
+    const handleAdded = (newAmb) => {
       setAmbulances(prev => prev.find(a => a._id === newAmb._id) ? prev : [newAmb, ...prev])
       toast.success(`🚑 New ambulance registered: ${newAmb.numberPlate}`)
-    })
-    socket.on("ambulance_updated", (updated) => {
+    }
+    const handleUpdated = (updated) => {
       setAmbulances(prev => prev.map(a => a._id === updated._id ? updated : a))
-    })
-    socket.on("ambulance_deleted", (id) => {
+    }
+    const handleDeleted = (id) => {
       setAmbulances(prev => prev.filter(a => a._id !== id))
-    })
+    }
 
-    return () => socket.disconnect()
+    socket.on("ambulance_added", handleAdded)
+    socket.on("ambulance_updated", handleUpdated)
+    socket.on("ambulance_deleted", handleDeleted)
+
+    return () => {
+      socket.off("connect", handleConnect)
+      socket.off("ambulance_added", handleAdded)
+      socket.off("ambulance_updated", handleUpdated)
+      socket.off("ambulance_deleted", handleDeleted)
+    }
   }, [])
 
   const filtered = ambulances.filter(a =>
@@ -156,7 +165,7 @@ export default function SuperAdminAmbulancesPage() {
             return (
               <Card key={amb._id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                 {/* Card top strip */}
-                <div className="h-1.5 bg-gradient-to-r from-teal-500 to-indigo-500" />
+                <div className="h-1.5 bg-linear-to-r from-teal-500 to-indigo-500" />
 
                 <CardContent className="p-5 space-y-4">
                   {/* Number plate + badges */}

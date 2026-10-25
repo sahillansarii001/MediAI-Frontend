@@ -234,20 +234,20 @@ export default function EmergencyMonitoring() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-4 items-center">
-            <div className="flex bg-slate-100 p-1 rounded-lg">
+          <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center w-full md:w-auto">
+            <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto justify-between sm:justify-start">
               {['Active', 'Resolved', 'All'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setStatusFilter(tab)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${statusFilter === tab ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${statusFilter === tab ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                 >
                   {tab}
                 </button>
               ))}
             </div>
             <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600"
+              className="h-10 w-full sm:w-auto rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600"
               value={riskFilter}
               onChange={(e) => setRiskFilter(e.target.value)}
             >

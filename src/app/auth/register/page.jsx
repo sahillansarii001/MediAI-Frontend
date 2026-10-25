@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Activity, Upload, CheckCircle2, Clock, XCircle, AlertCircle, Image as ImageIcon, FileText, Eye, EyeOff, X } from "lucide-react"
+import { Activity, Upload, CheckCircle2, Clock, XCircle, AlertCircle, Image as ImageIcon, FileText, Eye, EyeOff, X, ArrowLeft } from "lucide-react"
 import Logo from "@/components/shared/Logo"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
@@ -450,7 +450,7 @@ function RegisterContent() {
   }
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-white font-sans">
+    <div className="min-h-screen lg:h-screen w-full flex overflow-y-auto lg:overflow-hidden bg-white font-sans">
       {/* Left side - Branding/Hero (Hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 bg-slate-900 relative items-center justify-center overflow-hidden">
         {/* Background Gradients */}
@@ -486,6 +486,39 @@ function RegisterContent() {
 
         <div className="flex-1 flex flex-col justify-center p-6 sm:p-12 lg:p-16">
           <div className="w-full max-w-125 mx-auto">
+            {/* Back button */}
+            <div className="mb-6">
+              {step > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step === 2) {
+                      setStep(1);
+                    } else {
+                      setStep(0);
+                      setRole(null);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors group cursor-pointer"
+                >
+                  <div className="p-1.5 rounded-lg border border-slate-200 group-hover:border-teal-500/40 group-hover:bg-teal-50 transition-all">
+                    <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                  </div>
+                  {step === 2 ? "Back to Edit Details" : "Back to Role Selection"}
+                </button>
+              ) : (
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-teal-600 transition-colors group"
+                >
+                  <div className="p-1.5 rounded-lg border border-slate-200 group-hover:border-teal-500/40 group-hover:bg-teal-50 transition-all">
+                    <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                  </div>
+                  Back to Home
+                </Link>
+              )}
+            </div>
+
             {/* Step 0: Role Selection */}
             {step === 0 && (
               <div className="animate-in fade-in slide-in-from-bottom-4">

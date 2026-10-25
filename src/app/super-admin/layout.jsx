@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/Sidebar"
 import { Topbar } from "@/components/layout/Topbar"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 
 export default function SuperAdminLayout({ children }) {
   const router = useRouter()
@@ -29,23 +29,14 @@ export default function SuperAdminLayout({ children }) {
 
   // Socket.io Setup for Super Admin Notifications
   useEffect(() => {
-    let socket;
     if (isReady && role === 'super_admin') {
-      console.log(`[Socket] Super Admin socket connecting...`);
-      
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const socketUrl = apiBase.replace('/api', '');
+      const socket = getSocket();
+      if (!socket) return;
 
-      socket = io(socketUrl, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
-
-      socket.on("connect", () => {
-        console.log(`[Socket] Super Admin joined rooms: super_admin, admin`);
+      const handleConnect = () => {
         socket.emit("joinRoom", "super_admin");
         socket.emit("joinRoom", "admin");
-      });
+      };
 
       socket.on("connect_error", (err) => {
         console.error("[Socket] Super Admin connection error:", err);
@@ -84,20 +75,18 @@ export default function SuperAdminLayout({ children }) {
         } catch (e) {
           console.warn("Speech synthesis failed", e);
         }
-
-        window.dispatchEvent(new CustomEvent("emergency_alert_received", { detail: newEmergency }));
       });
 
-      socket.on("disconnect", () => {
-        console.log("[Socket] Super Admin disconnected");
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.disconnect();
+      if (socket.connected) {
+        handleConnect();
       }
-    };
+      socket.on("connect", handleConnect);
+
+      return () => {
+        socket.off("connect", handleConnect);
+        socket.off("emergency_alert");
+      };
+    }
   }, [isReady, role, user]);
 
   if (!authLoaded || !isReady) {
@@ -115,7 +104,7 @@ export default function SuperAdminLayout({ children }) {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar role="super_admin" />
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="mx-auto max-w-[1600px]">
+          <div className="mx-auto max-w-7xl">
             {children}
           </div>
         </main>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Video, Phone, Activity, FileText, CheckCircle2, Clock, Calendar, History, Stethoscope, MessageSquare, Trash2, Camera } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
 export default function DoctorChat() {
@@ -179,14 +179,17 @@ export default function DoctorChat() {
   // Real-time doctor status via socket
   useEffect(() => {
     if (!doctorId) return;
-    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
-    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
-    socket.on('doctorStatusChanged', (data) => {
+    const socket = getSocket();
+    if (!socket) return;
+    const handleDoctorStatus = (data) => {
       if (data.doctorId?.toString() === doctorId) {
         setDoctor(prev => prev ? { ...prev, onlineStatus: data.status, breakExpiresAt: data.breakExpiresAt } : prev);
       }
-    });
-    return () => socket.disconnect();
+    };
+    socket.on('doctorStatusChanged', handleDoctorStatus);
+    return () => {
+      socket.off('doctorStatusChanged', handleDoctorStatus);
+    };
   }, [doctorId]);
 
   // Real-time chat messages and consultation status via socket
@@ -196,41 +199,59 @@ export default function DoctorChat() {
     // Don't reconnect if chat is ended — no more events needed
     if (chat.status === 'ended') return;
 
-    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
-    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+    const socket = getSocket();
+    if (!socket) return;
     setChatSocket(socket);
 
-    socket.on('connect', () => {
+    const handleConnect = () => {
       socket.emit('joinRoom', `chat_${chat._id}`);
-      console.log(`[Socket] Patient joined chat room chat_${chat._id}`);
-    });
+    };
 
-    socket.on('messageReceived', (data) => {
+    const handleMessageReceived = (data) => {
       if (data.chatId === chat._id) {
         setMessages(prev => {
           if (prev.some(m => m._id === data.message._id)) return prev;
           return [...prev, {
             sender: data.message.senderModel === 'Doctor' ? 'doctor' : 'user',
             content: data.message.content,
-            imageUrl: data.message.imageUrl,
             timestamp: data.message.timestamp,
             _id: data.message._id
           }];
         });
       }
-    });
+    };
 
-    socket.on('consultationEnded', (data) => {
+    const handleMessageDeleted = (data) => {
       if (data.chatId === chat._id) {
-        toast("Consultation has been ended by the doctor", { icon: '🔔' });
-        setConsultationEnded(true);
-        setChat(prev => prev ? { ...prev, status: 'ended' } : prev);
+        setMessages(prev => prev.filter((_, idx) => idx !== data.index));
       }
-    });
+    };
 
-    // Instant update when doctor accepts or declines — no polling needed
+    const handleConsultationEnded = (data) => {
+      if (data.chatId === chat._id) {
+        setConsultationEnded(true);
+        toast("The consultation has ended", { icon: 'ℹ️' });
+      }
+    };
+
+    const handleReportReady = (data) => {
+      if (data.chatId === chat._id) {
+        setReportReady(true);
+        toast.success("Your medical report is ready!");
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('messageReceived', handleMessageReceived);
+    socket.on('messageDeleted', handleMessageDeleted);
+    socket.on('consultationEnded', handleConsultationEnded);
+    socket.on('reportReady', handleReportReady);
+
+    if (socket.connected) {
+      socket.emit('joinRoom', `chat_${chat._id}`);
+    }
+
     socket.on('consultationResponded', (updatedChat) => {
-      console.log('[Socket] Patient received consultationResponded:', updatedChat.status);
       if (updatedChat._id === chat._id) {
         setChat(updatedChat);
         if (updatedChat.status === 'ended') {
@@ -240,14 +261,12 @@ export default function DoctorChat() {
     });
 
     return () => {
-      console.log(`[Socket] Patient disconnecting from chat room chat_${chat._id}`);
-      socket.disconnect();
-      setChatSocket(null);
+      socket.off('connect', handleConnect);
+      socket.off('messageReceived', handleMessageReceived);
+      socket.off('messageDeleted', handleMessageDeleted);
+      socket.off('consultationEnded', handleConsultationEnded);
+      socket.off('reportReady', handleReportReady);
     };
-  // IMPORTANT: Only depend on chat._id, NOT chat.status.
-  // If we depend on chat.status, the socket disconnects and reconnects every time the
-  // doctor responds, creating a race condition where we miss the consultationResponded event.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat?._id]);
 
   // Track the currently active chat globally to suppress global popups for this chat
@@ -491,7 +510,7 @@ export default function DoctorChat() {
                       <div className="flex items-center gap-4">
                         {/* 52px x 52px Circular Avatar */}
                         <div
-                          className="relative rounded-full bg-teal-50 border-2 border-white shadow-sm flex-shrink-0"
+                          className="relative rounded-full bg-teal-50 border-2 border-white shadow-sm shrink-0"
                           style={{ width: '52px', height: '52px', minWidth: '52px', minHeight: '52px' }}
                         >
                           {/* Perfectly Centered Doctor Initial */}
@@ -542,14 +561,14 @@ export default function DoctorChat() {
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{spec}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className={`${badgeColor} py-1 px-3 text-[9px] uppercase font-extrabold tracking-widest rounded-full border shadow-sm flex-shrink-0 self-center`}>
+                      <Badge variant="outline" className={`${badgeColor} py-1 px-3 text-[9px] uppercase font-extrabold tracking-widest rounded-full border shadow-sm shrink-0 self-center`}>
                         {badgeText}
                       </Badge>
                     </div>
 
                     {/* Last Message Snippet */}
                     <div
-                      className="p-4 rounded-2xl text-xs text-slate-600 leading-relaxed min-h-[56px] flex items-center"
+                      className="p-4 rounded-2xl text-xs text-slate-600 leading-relaxed min-h-14 flex items-center"
                       style={{ backgroundColor: '#f8fafc', border: '1px solid #e5e7eb' }}
                     >
                       <span className="line-clamp-2 w-full font-medium">
@@ -566,7 +585,7 @@ export default function DoctorChat() {
                     >
                       {/* Row 1: Date & Time */}
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
                           <Calendar className="h-4 w-4 text-teal-500" />
                           {new Date(c.updatedAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </span>
@@ -583,7 +602,7 @@ export default function DoctorChat() {
                                 setSelectedHistoryChat(c)
                                 setIsHistoryModalOpen(true)
                               }}
-                              className="text-xs border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 font-bold px-4 py-2 rounded-xl transition-all duration-200 shadow-sm h-9 flex items-center justify-center flex-shrink-0"
+                              className="text-xs border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 hover:text-teal-800 font-bold px-4 py-2 rounded-xl transition-all duration-200 shadow-sm h-9 flex items-center justify-center shrink-0"
                             >
                               <History className="h-3.5 w-3.5 mr-1" /> History
                             </Button>
@@ -591,7 +610,7 @@ export default function DoctorChat() {
                             <Button
                               size="sm"
                               onClick={() => router.push(`/patient/chat?doctorId=${c.doctor?._id || c.doctor}`)}
-                              className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all duration-200 shadow-sm h-9 flex items-center justify-center min-w-[130px] flex-shrink-0"
+                              className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all duration-200 shadow-sm h-9 flex items-center justify-center min-w-32.5 shrink-0"
                             >
                               Consult Again
                             </Button>
@@ -600,7 +619,7 @@ export default function DoctorChat() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeleteChat(c._id)}
-                              className="border-red-200 text-red-500 bg-red-50/50 hover:bg-red-50 hover:text-red-600 font-bold px-3 rounded-xl transition-all duration-200 shadow-sm h-9 flex items-center justify-center flex-shrink-0"
+                              className="border-red-200 text-red-500 bg-red-50/50 hover:bg-red-50 hover:text-red-600 font-bold px-3 rounded-xl transition-all duration-200 shadow-sm h-9 flex items-center justify-center shrink-0"
                               title="Delete Consultation History"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -609,7 +628,7 @@ export default function DoctorChat() {
                         ) : (
                           <Button
                             onClick={() => router.push(`/patient/chat?doctorId=${c.doctor?._id || c.doctor}&resume=true`)}
-                            className="bg-teal-600 hover:bg-teal-700 font-bold text-white text-xs shadow-md shadow-teal-100/50 px-5 py-2 rounded-xl transition-all duration-200 h-9 flex items-center justify-center min-w-[150px] flex-shrink-0"
+                            className="bg-teal-600 hover:bg-teal-700 font-bold text-white text-xs shadow-md shadow-teal-100/50 px-5 py-2 rounded-xl transition-all duration-200 h-9 flex items-center justify-center min-w-37.5 shrink-0"
                           >
                             <MessageSquare className="h-3.5 w-3.5 mr-1" /> Resume Chat
                           </Button>
@@ -625,7 +644,7 @@ export default function DoctorChat() {
 
         {/* Previous Consultation History Modal (Rendered from our shared modal state) */}
         {isHistoryModalOpen && selectedHistoryChat && (
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
               <div className="bg-teal-600 p-5 text-white flex justify-between items-center shrink-0">
                 <div>
@@ -650,7 +669,7 @@ export default function DoctorChat() {
               <div className="p-6 overflow-y-auto flex-1 space-y-4">
                 <div className="space-y-3">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Chat Transcript</p>
-                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-[300px] overflow-y-auto">
+                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-75 overflow-y-auto">
                     {selectedHistoryChat.messages && selectedHistoryChat.messages.length > 0 ? (
                       selectedHistoryChat.messages.map((m, idx) => {
                         const isDoctor = m.senderModel === 'Doctor';
@@ -790,9 +809,9 @@ export default function DoctorChat() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
+    <div className="min-h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
       {/* Main Chat Area */}
-      <div className="flex flex-col h-full w-full md:w-8/12">
+      <div className="flex flex-col h-140 md:h-full w-full md:w-8/12">
         {chat?.status === 'rescheduled' && chat.messages?.length > 0 && (
           <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-800 text-sm font-semibold shadow-sm animate-in slide-in-from-top duration-300 shrink-0">
             <Clock className="h-5 w-5 text-amber-500 animate-pulse" />
@@ -948,7 +967,7 @@ export default function DoctorChat() {
                 <History className="h-4 w-4 text-teal-600" />
                 Previous Consultations
               </h4>
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-55 overflow-y-auto pr-1">
                 {chatHistory.map((pastChat) => (
                   <div
                     key={pastChat._id}
@@ -979,7 +998,7 @@ export default function DoctorChat() {
 
       {/* Previous Consultation History Modal */}
       {isHistoryModalOpen && selectedHistoryChat && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
             <div className="bg-teal-600 p-5 text-white flex justify-between items-center shrink-0">
               <div>
@@ -1002,7 +1021,7 @@ export default function DoctorChat() {
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div className="space-y-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Chat Transcript</p>
-                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-[300px] overflow-y-auto">
+                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-75 overflow-y-auto">
                   {selectedHistoryChat.messages && selectedHistoryChat.messages.length > 0 ? (
                     selectedHistoryChat.messages.map((m, idx) => {
                       const isDoctor = m.senderModel === 'Doctor';

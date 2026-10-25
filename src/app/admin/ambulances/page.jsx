@@ -9,7 +9,7 @@ import { Modal } from "@/components/ui/modal"
 import { Ambulance, Plus, Pencil, Trash2, Search, Phone, CreditCard, Car, Sun, Moon, Clock } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 
 const STATUS_COLORS = {
   available: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -63,33 +63,45 @@ export default function AdminAmbulancesPage() {
     fetchAmbulances()
 
     // Real-time socket connection
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-    const socketUrl = apiBase.replace("/api", "")
-    const socket = io(socketUrl, { withCredentials: true, transports: ["websocket", "polling"] })
+    const socket = getSocket()
     socketRef.current = socket
 
-    socket.on("connect", () => {
+    const handleConnect = () => {
       socket.emit("joinRoom", "admin_room")
-    })
+    }
 
-    socket.on("ambulance_added", (newAmb) => {
+    if (socket.connected) {
+      handleConnect()
+    }
+    socket.on("connect", handleConnect)
+
+    const handleAdded = (newAmb) => {
       setAmbulances(prev => {
         if (prev.find(a => a._id === newAmb._id)) return prev
         return [newAmb, ...prev]
       })
       toast.success(`🚑 New ambulance added: ${newAmb.numberPlate}`)
-    })
+    }
 
-    socket.on("ambulance_updated", (updated) => {
+    const handleUpdated = (updated) => {
       setAmbulances(prev => prev.map(a => a._id === updated._id ? updated : a))
-    })
+    }
 
-    socket.on("ambulance_deleted", (id) => {
+    const handleDeleted = (id) => {
       setAmbulances(prev => prev.filter(a => a._id !== id))
       toast.error("An ambulance was removed.")
-    })
+    }
 
-    return () => socket.disconnect()
+    socket.on("ambulance_added", handleAdded)
+    socket.on("ambulance_updated", handleUpdated)
+    socket.on("ambulance_deleted", handleDeleted)
+
+    return () => {
+      socket.off("connect", handleConnect)
+      socket.off("ambulance_added", handleAdded)
+      socket.off("ambulance_updated", handleUpdated)
+      socket.off("ambulance_deleted", handleDeleted)
+    }
   }, [])
 
   const openAdd = () => {

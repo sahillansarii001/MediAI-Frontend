@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Mic, MicOff, Video, VideoOff, PhoneOff, User, MessageSquare } from "lucide-react"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 import { useAuth } from "@/context/AuthContext"
 import api from "@/lib/api"
 
@@ -43,15 +43,14 @@ export function WebRTCCall({ role }) {
     let isMounted = true
     let incomingCallTimeout;
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
-    const socketUrl = apiBase.replace('/api', '')
-    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] })
+    const socket = getSocket()
     socketRef.current = socket
 
-    // Always rejoin the room on connect/reconnect to prevent lost signals
-    socket.on('connect', () => {
+    const handleConnect = () => {
       socket.emit('joinRoom', `chat_${chatId}`)
-    })
+    }
+    if (socket.connected) handleConnect()
+    socket.on('connect', handleConnect)
 
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }]
@@ -187,7 +186,7 @@ export function WebRTCCall({ role }) {
     let answerProcessed = false;
 
     // Socket listeners
-    socket.on('callAccepted', async (signal) => {
+    const handleCallAccepted = async (signal) => {
       if (answerProcessed) return;
       answerProcessed = true;
 
@@ -227,15 +226,15 @@ export function WebRTCCall({ role }) {
       } catch (err) {
         console.error("Error setting remote desc on answer", err)
       }
-    })
+    }
 
-    socket.on('callRejected', () => {
+    const handleCallRejected = () => {
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
       setCallStatus('Call rejected')
       setTimeout(() => handleEndCall(false), 2000)
-    })
+    }
 
-    socket.on('iceCandidate', async (candidate) => {
+    const handleIceCandidate = async (candidate) => {
       try {
         if (pc.remoteDescription) {
           await pc.addIceCandidate(new RTCIceCandidate(candidate))
@@ -245,13 +244,18 @@ export function WebRTCCall({ role }) {
       } catch (err) {
         console.error("Error adding ICE candidate", err)
       }
-    })
+    }
 
-    socket.on('callEnded', () => {
+    const handleCallEnded = () => {
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
       console.log("[WebRTC] Call ended by remote peer");
       handleEndCall(false)
-    })
+    }
+
+    socket.on('callAccepted', handleCallAccepted)
+    socket.on('callRejected', handleCallRejected)
+    socket.on('iceCandidate', handleIceCandidate)
+    socket.on('callEnded', handleCallEnded)
 
     const initiateCall = async () => {
       setCallStatus('Ringing...')
@@ -369,7 +373,11 @@ export function WebRTCCall({ role }) {
       isMounted = false;
       if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
       if (typeof incomingCallTimeout !== 'undefined') clearTimeout(incomingCallTimeout);
-      socket.disconnect()
+      socket.off('connect', handleConnect)
+      socket.off('callAccepted', handleCallAccepted)
+      socket.off('callRejected', handleCallRejected)
+      socket.off('iceCandidate', handleIceCandidate)
+      socket.off('callEnded', handleCallEnded)
       pc.close()
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop())
@@ -485,11 +493,11 @@ export function WebRTCCall({ role }) {
              {callStatus === 'Connected' && (
                 <>
                   <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" style={{ animationDuration: '3s' }}></div>
-                  <div className="absolute inset-[-20px] rounded-full border border-emerald-500/30 animate-pulse"></div>
-                  <div className="absolute inset-[-40px] rounded-full border border-emerald-500/10 animate-pulse" style={{ animationDelay: '500ms' }}></div>
+                  <div className="absolute -inset-5 rounded-full border border-emerald-500/30 animate-pulse"></div>
+                  <div className="absolute -inset-10 rounded-full border border-emerald-500/10 animate-pulse" style={{ animationDelay: '500ms' }}></div>
                 </>
              )}
-             <div className="h-36 w-36 md:h-48 md:w-48 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-6xl md:text-7xl text-white font-bold shadow-2xl border-4 border-slate-700 relative z-10">
+             <div className="h-36 w-36 md:h-48 md:w-48 rounded-full bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center text-6xl md:text-7xl text-white font-bold shadow-2xl border-4 border-slate-700 relative z-10">
                 {remoteName.charAt(0).toUpperCase()}
              </div>
           </div>
@@ -569,7 +577,7 @@ export function WebRTCCall({ role }) {
         </div>
 
         {/* Self View (Local) */}
-        <div className="absolute top-6 right-6 w-32 sm:w-48 aspect-[3/4] sm:aspect-video bg-slate-800 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl z-20">
+        <div className="absolute top-6 right-6 w-32 sm:w-48 aspect-3/4 sm:aspect-video bg-slate-800 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl z-20">
           <video 
             ref={localVideoRef} 
             autoPlay 
@@ -587,7 +595,7 @@ export function WebRTCCall({ role }) {
         </div>
 
         {/* Controls Bar */}
-        <div className="h-24 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 w-full flex items-center justify-center gap-4 sm:gap-6 px-6 pb-6 pt-10">
+        <div className="h-24 bg-linear-to-t from-black/80 to-transparent absolute bottom-0 w-full flex items-center justify-center gap-4 sm:gap-6 px-6 pb-6 pt-10">
           <Button
             variant="ghost"
             size="icon"

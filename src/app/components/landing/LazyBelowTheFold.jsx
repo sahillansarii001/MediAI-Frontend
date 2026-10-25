@@ -40,7 +40,7 @@ const trustCards = [
   },
   {
     title: "Secure Medical Records",
-    description: "AES-256 encrypted, decentralized HIPAA-compliant digital vault.",
+    description: "AES-256 encrypted, decentralized zero-knowledge digital vault.",
     icon: Shield,
     color: "from-indigo-500/20 to-purple-500/20",
     iconColor: "text-indigo-500"
@@ -58,8 +58,8 @@ const faqItems = [
     answer: "When you trigger the emergency SOS, the platform immediately retrieves your device's high-precision GPS coordinates (subject to permission) and broadcasts a secure alert package containing your contact information, location details, and basic health metrics to local emergency dispatchers and nearby on-duty doctors."
   },
   {
-    question: "Are my medical records safe and HIPAA compliant?",
-    answer: "Absolutely. Security is our absolute priority. All medical histories, prescription scans, and diagnostic reports are fully encrypted in transit and at rest using banking-grade AES-256 standards. Our systems are audited regularly to guarantee strict adherence to HIPAA and global healthcare privacy regulations."
+    question: "Are my medical records safe and encrypted?",
+    answer: "Absolutely. Security is our absolute priority. All medical histories, prescription scans, and diagnostic reports are fully encrypted in transit and at rest using banking-grade AES-256 standards with strict zero-knowledge access controls."
   },
   {
     question: "How are the doctors on the platform verified?",
@@ -70,8 +70,8 @@ const faqItems = [
     answer: "Yes, our advanced OCR (Optical Character Recognition) engine is specifically optimized for medical handwriting. It parses doctors' handwritten prescriptions with high precision, automatically extracts drug names and dosages, converts them to clear digital cards, and sets up smart alarm lists for you."
   },
   {
-    question: "Can I sync my smartwatch with the MediAI health tracker?",
-    answer: "Yes! MediAI seamlessly integrates with popular smartwatches and wearables (including Apple Health, Google Fit, and Garmin). It automatically pulls active telemetry—like resting heart rate, oxygen saturation, and sleep cycles—to provide real-time updates and trigger proactive health alerts."
+    question: "How does the Health Vitals Tracker work on MediAI?",
+    answer: "MediAI provides an intuitive patient health dashboard where you can log key biometric indicators—such as resting heart rate, blood pressure, weight, and blood glucose—so your consulting physician has an immediate clinical baseline during appointments."
   },
   {
     question: "Is MediAI a replacement for primary clinical care?",
@@ -79,7 +79,7 @@ const faqItems = [
   },
   {
     question: "What are the subscription models and is there a free tier?",
-    answer: "MediAI offers a generous free tier that includes basic AI Symptom Analysis, primary medical record uploads, and emergency SOS access. Our premium tiers unlock instant teleconsultations with top specialists, advanced smart device syncs, unlimited OCR scanning, and family healthcare profiles."
+    answer: "MediAI offers a generous free tier that includes basic AI Symptom Analysis, primary medical record uploads, and emergency SOS access. Our premium tiers unlock instant teleconsultations with top specialists, priority doctor booking, unlimited OCR scanning, and family healthcare profiles."
   }
 ]
 
@@ -105,7 +105,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
             SECTION 6 — DOCTOR + PATIENT ECOSYSTEM
             ================================== */}
         <section id="ecosystem" className="py-28 bg-white relative overflow-hidden">
-          <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
+          <div className="mx-auto max-w-350 px-6 sm:px-12">
 
             {/* Centered Heading */}
             <motion.div
@@ -122,7 +122,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                 Connecting Patients, Doctors and Healthcare Services Through AI
               </h2>
               <p className="text-slate-500 font-medium text-base sm:text-lg">
-                MediAI binds patients and clinical professionals into one streamlined, HIPAA-compliant communication loop to speed up evaluations and minimize friction.
+                MediAI binds patients and clinical professionals into one streamlined, encrypted communication loop to speed up evaluations and minimize friction.
               </p>
             </motion.div>
 
@@ -130,9 +130,9 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
             <div className="grid lg:grid-cols-2 gap-16 relative items-center">
 
               {/* Laser line effect in middle */}
-              <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[2px] h-[80%] bg-slate-100 z-0">
+              <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-[80%] bg-slate-100 z-0">
                 {/* Moving light dot */}
-                <div className="w-[6px] h-6 bg-teal-400 rounded-full absolute left-[-2px] animate-bounce shadow-md shadow-cyan-500" />
+                <div className="w-1.5 h-6 bg-teal-400 rounded-full absolute -left-0.5 animate-bounce shadow-md shadow-cyan-500" />
               </div>
 
               {/* Patient Dashboard Preview (Left) */}
@@ -141,7 +141,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="bg-white border border-slate-200/80 rounded-[24px] p-6 shadow-xl shadow-cyan-500/5 text-left text-xs z-10"
+                className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xl shadow-cyan-500/5 text-left text-xs z-10"
               >
                 <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-5">
                   <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="bg-white border border-slate-200/80 rounded-[24px] p-6 shadow-xl shadow-cyan-500/5 text-left text-xs z-10"
+                className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xl shadow-cyan-500/5 text-left text-xs z-10"
               >
                 <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-5">
                   <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
             SECTION 7 — WHY MEDIAI
             ================================== */}
         <section id="why-mediai" className="py-24 bg-[#F8FAFC] border-t border-b border-slate-100">
-          <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
+          <div className="mx-auto max-w-350 px-6 sm:px-12">
 
             {/* Header info */}
             <motion.div
@@ -252,9 +252,9 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeInUp}
-              className="overflow-x-auto rounded-[24px] border border-slate-200/60 bg-white shadow-xl max-w-5xl mx-auto"
+              className="overflow-x-auto rounded-3xl border border-slate-200/60 bg-white shadow-xl max-w-5xl mx-auto"
             >
-              <table className="w-full text-left border-collapse min-w-[700px]">
+              <table className="w-full text-left border-collapse min-w-175">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-900 font-extrabold text-sm uppercase tracking-wider">
                     <th className="p-6">Healthcare Feature</th>
@@ -287,9 +287,9 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
             SECTION 8 — TESTIMONIALS
             ================================== */}
         <section className="py-24 bg-white relative overflow-hidden">
-          <div className="absolute top-1/2 left-0 right-0 h-40 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none" />
+          <div className="absolute top-1/2 left-0 right-0 h-40 bg-linear-to-r from-teal-500/5 to-transparent pointer-events-none" />
 
-          <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
+          <div className="mx-auto max-w-350 px-6 sm:px-12">
 
             {/* Header info */}
             <motion.div
@@ -348,7 +348,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                     visible: { opacity: 1, y: 0, transition: { delay: idx * 0.1, duration: 0.6 } }
                   }}
                   whileHover={{ y: -6 }}
-                  className="bg-white/45 backdrop-blur-md border border-slate-200/50 shadow-xl rounded-3xl p-8 flex flex-col justify-between min-h-[300px] hover:border-cyan-500/20 hover:shadow-2xl transition-all duration-350 relative overflow-hidden"
+                  className="bg-white/45 backdrop-blur-md border border-slate-200/50 shadow-xl rounded-3xl p-8 flex flex-col justify-between min-h-75 hover:border-cyan-500/20 hover:shadow-2xl transition-all duration-350 relative overflow-hidden"
                 >
                   <Quote className="absolute top-6 right-6 h-12 w-12 text-slate-100/50 z-0" />
 
@@ -366,7 +366,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
                   </div>
 
                   <div className="flex items-center gap-4 relative z-10 pt-6 border-t border-slate-100 mt-6">
-                    <div className={`h-11 w-11 rounded-full bg-gradient-to-tr ${t.color} text-white font-black text-sm flex items-center justify-center`}>
+                    <div className={`h-11 w-11 rounded-full bg-linear-to-tr ${t.color} text-white font-black text-sm flex items-center justify-center`}>
                       {t.initials}
                     </div>
                     <div className="flex flex-col text-left">
@@ -385,7 +385,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
             SECTION 9 — FAQ
             ================================== */}
         <section id="faq" className="py-24 bg-[#F8FAFC]">
-          <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
+          <div className="mx-auto max-w-350 px-6 sm:px-12">
 
             {/* Header info */}
             <motion.div
@@ -455,7 +455,7 @@ export default function LazyBelowTheFold({ activeFAQ, setActiveFAQ, handleScroll
           {/* Radial teal mesh glow backdrop */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#14B8A6_0%,transparent_60%)] opacity-10 pointer-events-none" />
 
-          <div className="mx-auto max-w-[1400px] px-6 sm:px-12 text-center relative z-10 w-full">
+          <div className="mx-auto max-w-350 px-6 sm:px-12 text-center relative z-10 w-full">
             <motion.div
               initial="hidden"
               whileInView="visible"

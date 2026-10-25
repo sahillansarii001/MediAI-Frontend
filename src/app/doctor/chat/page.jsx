@@ -54,9 +54,9 @@ export default function DoctorChatDashboard() {
   const endedChats = allChats.filter(c => c.status === 'ended')
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
+    <div className="min-h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
       {/* Sidebar Area: Consultations List */}
-      <div className="hidden md:flex w-full md:w-3/12 h-full flex-col gap-4 overflow-hidden">
+      <div className="flex w-full md:w-4/12 lg:w-3/12 h-85 md:h-full flex-col gap-4 overflow-hidden shrink-0">
         {/* Queue/History list */}
         <Card className="flex-1 overflow-hidden flex flex-col min-h-0 bg-white border border-slate-200 rounded-2xl">
           <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 shrink-0 px-4 pt-4 pb-1">
@@ -152,7 +152,7 @@ export default function DoctorChatDashboard() {
 
       {/* Main Chat Area Placeholder */}
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 p-8 text-center h-full">
-        <div className="h-24 w-24 bg-teal-50/80 rounded-[2rem] flex items-center justify-center mb-6 shadow-sm border border-teal-100 rotate-3 transition-transform hover:rotate-6">
+        <div className="h-24 w-24 bg-teal-50/80 rounded-4xl flex items-center justify-center mb-6 shadow-sm border border-teal-100 rotate-3 transition-transform hover:rotate-6">
           <MessageSquare className="h-10 w-10 text-teal-600" />
         </div>
         <h2 className="text-2xl font-black tracking-tight text-slate-800 mb-3">Patient Consultations</h2>

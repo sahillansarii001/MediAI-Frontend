@@ -7,12 +7,10 @@ import { Topbar } from "@/components/layout/Topbar"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Bell } from "lucide-react"
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
-
-let patientSocket = null;
 
 export default function PatientLayout({ children }) {
   const router = useRouter()
@@ -58,15 +56,9 @@ export default function PatientLayout({ children }) {
   // Socket.io Setup for Patient Notifications
   useEffect(() => {
     if (isReady && role === 'patient' && patientId) {
-      if (!patientSocket) {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const socketUrl = apiBase.replace('/api', '');
-        patientSocket = io(socketUrl, {
-          withCredentials: true,
-          transports: ['websocket', 'polling'],
-          autoConnect: false
-        });
-      }
+      const socket = getSocket();
+      if (!socket) return;
+      const patientSocket = socket;
       setGlobalSocket(patientSocket);
 
       // Remove duplicate socket listeners before adding
@@ -102,7 +94,7 @@ export default function PatientLayout({ children }) {
             title="Click to dismiss"
           >
             <span>{data.message}</span>
-            <span className="ml-3 text-red-800 hover:text-red-950 font-extrabold text-sm flex-shrink-0">✕</span>
+            <span className="ml-3 text-red-800 hover:text-red-950 font-extrabold text-sm shrink-0">✕</span>
           </div>
         ), {
           duration: 10000,
@@ -211,10 +203,16 @@ export default function PatientLayout({ children }) {
     }
 
     return () => {
-      // Cleanup on unmount
-      if (patientSocket) {
-        patientSocket.disconnect();
-        patientSocket = null;
+      // Remove listeners on unmount without tearing down socket connection
+      if (socket) {
+        socket.off("connect");
+        socket.off("appointmentCancelled");
+        socket.off("doctorChatRequest");
+        socket.off("userProfileUpdated");
+        socket.off("orderStatusUpdated");
+        socket.off("orderDeletedPatient");
+        socket.off("medicineStockUpdated");
+        socket.off("doctorFollowUp");
       }
     };
   }, [isReady, role, patientId]);
@@ -262,9 +260,9 @@ export default function PatientLayout({ children }) {
 
       {/* Incoming Doctor Consultation Modal */}
       {incomingDoctorRequest && !pathname.includes(incomingDoctorRequest._id) && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
-            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
+        <div className="fixed inset-0 z-100 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
+            <div className="bg-linear-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
               <button
                 onClick={handleDeclineDoctorRequest}
                 className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold transition-all shadow-sm border border-slate-200"
@@ -273,7 +271,7 @@ export default function PatientLayout({ children }) {
               
               <div className="relative mx-auto w-20 h-20 mb-6">
                 <div className="absolute inset-0 rounded-full border-2 border-teal-200 animate-ping"></div>
-                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
+                <div className="relative h-20 w-20 bg-linear-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
                   <MessageSquare className="h-8 w-8 text-white" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
@@ -310,9 +308,9 @@ export default function PatientLayout({ children }) {
       )}
       {/* Incoming Doctor Follow-up Message Notification */}
       {followUpNotification && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
-            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
+        <div className="fixed inset-0 z-100 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
+            <div className="bg-linear-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
               <button
                 onClick={() => {
                   notifTimers.current.forEach(t => clearTimeout(t));
@@ -325,7 +323,7 @@ export default function PatientLayout({ children }) {
 
               <div className="relative mx-auto w-20 h-20 mb-6">
                 <div className="absolute inset-0 rounded-full border-2 border-teal-200 animate-ping"></div>
-                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
+                <div className="relative h-20 w-20 bg-linear-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
                   <Bell className="h-8 w-8 text-white" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">

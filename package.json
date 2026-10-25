@@ -38,14 +38,14 @@
     "main": "index.js",
     "repository": {
         "type": "git",
-        "url": "git+ssh://git@github.com/Uzeeerrrr-01/Health_Frontend.git"
+        "url": "git+https://github.com/sahillansarii001/MediAI-Frontend.git"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "type": "module",
     "bugs": {
-        "url": "https://github.com/Uzeeerrrr-01/Health_Frontend/issues"
+        "url": "https://github.com/sahillansarii001/MediAI-Frontend/issues"
     },
-    "homepage": "https://github.com/Uzeeerrrr-01/Health_Frontend#readme"
+    "homepage": "https://github.com/sahillansarii001/MediAI-Frontend#readme"
 }

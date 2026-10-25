@@ -10,7 +10,7 @@ import { MessageSquare, Clock, Check, Calendar } from "lucide-react"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
 export default function DoctorLayout({ children }) {
@@ -88,69 +88,58 @@ export default function DoctorLayout({ children }) {
 
   // Socket.io Setup
   useEffect(() => {
-    let socket;
     const doctorId = user?._id || user?.id;
     if (isReady && role === 'doctor' && doctorId) {
-      console.log(`[Socket] Doctor socket connected with doctorId: ${doctorId}`);
-
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const socketUrl = apiBase.replace('/api', '');
-
-      socket = io(socketUrl, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
+      const socket = getSocket();
+      if (!socket) return;
       setGlobalSocket(socket);
 
-      socket.on("connect", () => {
-        console.log(`[Socket] Doctor joined room: doctor_${doctorId}`);
+      const handleConnect = () => {
         socket.emit("joinRoom", `doctor_${doctorId}`);
-      });
+      };
 
-      socket.on("connect_error", (err) => {
-        console.error("[Socket] Doctor connection error:", err);
-      });
-
-      socket.on("newChatRequest", (chatData) => {
-        console.log(`[Socket] Doctor received newChatRequest event:`, chatData);
-        // Only show if the chat status is requested (pending)
+      const handleNewChatRequest = (chatData) => {
         if (chatData.status === 'requested') {
           setIncomingRequest(chatData);
           toast.success("New consultation request!");
         }
-      });
+      };
 
-      socket.on("cancelChatRequest", (data) => {
-        console.log(`[Socket] Doctor received cancelChatRequest event:`, data);
+      const handleCancelChatRequest = (data) => {
         toast.error("Patient cancelled the consultation request");
         setIncomingRequest(prev => {
           if (prev && prev._id === data.chatId) return null;
           return prev;
         });
-      });
+      };
 
-      socket.on("disconnect", () => {
-        console.log("[Socket] Doctor disconnected");
-      });
-
-      socket.on("userProfileUpdated", (updatedUser) => {
-        console.log(`[Socket] Doctor received userProfileUpdated event:`, updatedUser);
+      const handleUserProfileUpdated = (updatedUser) => {
         const stored = JSON.parse(sessionStorage.getItem("user") || "{}");
         const base = stored.user || stored;
         if (base._id === updatedUser._id || base.id === updatedUser._id) {
-           const updatedData = { ...base, ...updatedUser };
-           sessionStorage.setItem("user", JSON.stringify(updatedData));
-           window.dispatchEvent(new CustomEvent("profileUpdated"));
-           toast.success("Your profile was updated by an admin");
+          const updatedData = { ...base, ...updatedUser };
+          sessionStorage.setItem("user", JSON.stringify(updatedData));
+          window.dispatchEvent(new CustomEvent("profileUpdated"));
+          toast.success("Your profile was updated by an admin");
         }
-      });
-    }
+      };
 
-    return () => {
-      if (socket) {
-        socket.disconnect();
+      socket.on("connect", handleConnect);
+      socket.on("newChatRequest", handleNewChatRequest);
+      socket.on("cancelChatRequest", handleCancelChatRequest);
+      socket.on("userProfileUpdated", handleUserProfileUpdated);
+
+      if (socket.connected) {
+        socket.emit("joinRoom", `doctor_${doctorId}`);
       }
-    };
+
+      return () => {
+        socket.off("connect", handleConnect);
+        socket.off("newChatRequest", handleNewChatRequest);
+        socket.off("cancelChatRequest", handleCancelChatRequest);
+        socket.off("userProfileUpdated", handleUserProfileUpdated);
+      };
+    }
   }, [isReady, role, user]);
 
   // Keep a ref to incomingRequest so polling closure isn't stale
@@ -268,9 +257,9 @@ export default function DoctorLayout({ children }) {
 
       {/* Incoming Consultation Modal */}
       {incomingRequest && !pathname.includes(incomingRequest._id) && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
-            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
+        <div className="fixed inset-0 z-100 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
+            <div className="bg-linear-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
               <button
                 onClick={handleBusy}
                 className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold transition-all shadow-sm border border-slate-200"
@@ -279,7 +268,7 @@ export default function DoctorLayout({ children }) {
               
               <div className="relative mx-auto w-20 h-20 mb-6">
                 <div className="absolute inset-0 rounded-full border-2 border-teal-200 animate-ping"></div>
-                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
+                <div className="relative h-20 w-20 bg-linear-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
                   <MessageSquare className="h-8 w-8 text-white" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">

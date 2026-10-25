@@ -1,7 +1,6 @@
 "use client"
 
-
-import { io } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button"
@@ -12,8 +11,6 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
-
-let patientSocket = null;
 
 export function Topbar({ role: propsRole }) {
   const router = useRouter()
@@ -37,55 +34,53 @@ export function Topbar({ role: propsRole }) {
     };
     document.addEventListener("mousedown", handleClickOutside);
 
-    // Socket.io setup for real-time notifications
+    // Socket.io setup for real-time notifications using pooled singleton
+    let socket = null;
     if (user && user._id) {
-      if (!patientSocket) {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const socketUrl = apiBase.replace('/api', '');
-        patientSocket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'], autoConnect: false });
-      }
-      // Remove duplicate listeners
-      patientSocket.off('connect');
-      patientSocket.off('new_notification');
+      socket = getSocket();
+      if (socket) {
+        const handleNewNotification = (data) => {
+          fetchNotifications();
+        };
 
-      patientSocket.on('connect', () => {
-        console.log(`[Socket] Topbar patient socket connected`);
-        patientSocket.emit('joinRoom', `patient_${user._id}`);
-      });
+        const handleConnect = () => {
+          socket.emit('joinRoom', `patient_${user._id}`);
+        };
 
-      patientSocket.on('new_notification', (data) => {
-        console.log('[Socket] New notification event:', data);
-        fetchNotifications();
-      });
+        socket.on('connect', handleConnect);
+        socket.on('new_notification', handleNewNotification);
 
-      if (!patientSocket.connected) {
-        patientSocket.connect();
-      } else {
-        patientSocket.emit('joinRoom', `patient_${user._id}`);
+        if (socket.connected) {
+          socket.emit('joinRoom', `patient_${user._id}`);
+        }
+
+        return () => {
+          clearInterval(interval);
+          document.removeEventListener("mousedown", handleClickOutside);
+          socket.off('connect', handleConnect);
+          socket.off('new_notification', handleNewNotification);
+        };
       }
     }
 
     return () => {
       clearInterval(interval);
       document.removeEventListener("mousedown", handleClickOutside);
-      if (patientSocket) {
-        patientSocket.disconnect();
-        patientSocket = null;
-      }
     };
   }, [user]);
 
   const fetchNotifications = async () => {
+    if (!user) return;
     try {
       const res = await api.get('/notifications')
-      if (res.data.success) {
+      if (res.data?.success && Array.isArray(res.data.data)) {
         const sorted = res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setNotifications(sorted);
         const unread = sorted.filter(n => !n.isRead).length;
         setUnreadCount(unread);
       }
     } catch (err) {
-      console.error("Failed to fetch notifications:", err)
+      // Quietly ignore background network polling errors during reloads/sleep
     }
   }
 
@@ -185,7 +180,7 @@ return (
         </button>
 
         {showNotifications && (
-          <div className="absolute right-0 mt-2 w-[320px] sm:w-[380px] bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute right-0 mt-2 w-[320px] sm:w-95 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <h3 className="font-bold text-slate-900 flex items-center gap-2 text-sm">
                 Notifications
@@ -198,7 +193,7 @@ return (
               )}
             </div>
 
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-100 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell className="h-8 w-8 mx-auto text-slate-200 mb-2" />
@@ -212,7 +207,7 @@ return (
                       onClick={() => markAsRead(notif._id, notif.route)}
                       className={`p-4 hover:bg-slate-50 cursor-pointer transition-colors flex gap-3 ${!notif.isRead ? 'bg-teal-50/30' : ''}`}
                     >
-                      <div className={`h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center ${!notif.isRead ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-400'}`}>
+                      <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center ${!notif.isRead ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-400'}`}>
                         <Bell className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -220,7 +215,7 @@ return (
                           <p className={`text-sm font-semibold truncate ${!notif.isRead ? 'text-slate-900' : 'text-slate-600'}`}>
                             {notif.title}
                           </p>
-                          {!notif.isRead && <div className="h-2 w-2 rounded-full bg-teal-500 mt-1.5 flex-shrink-0" />}
+                          {!notif.isRead && <div className="h-2 w-2 rounded-full bg-teal-500 mt-1.5 shrink-0" />}
                         </div>
                         <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-1.5">
                           {notif.message}
@@ -233,7 +228,7 @@ return (
                             variant="ghost"
                             size="sm"
                             onClick={(e) => { e.stopPropagation(); handleDelete(notif._id); }}
-                            className="flex-shrink-0 h-6 w-6 p-0 hover:text-red-500"
+                            className="shrink-0 h-6 w-6 p-0 hover:text-red-500"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -316,7 +311,7 @@ return (
 
     {/* Break Duration Modal */}
     {showBreakModal && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 flex flex-col gap-6 transform scale-100 transition-all duration-300">
           <div className="text-center space-y-2">
             <div className="h-12 w-12 mx-auto rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 mb-2">

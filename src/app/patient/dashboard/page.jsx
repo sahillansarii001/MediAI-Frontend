@@ -6,7 +6,7 @@ import { StatCard } from "@/components/shared/StatCard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
-import { HeartPulse, Activity, Weight, Calendar, Clock, AlertTriangle, ChevronRight, Bell, XCircle, CalendarCheck, FileText, Plus, RefreshCw, Watch } from "lucide-react"
+import { HeartPulse, Activity, Weight, Calendar, Clock, AlertTriangle, ChevronRight, Bell, XCircle, CalendarCheck, FileText, Plus } from "lucide-react"
 import Link from "next/link"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
@@ -22,11 +22,9 @@ export default function PatientDashboard() {
   // Weekly health activity chart
   const [weeklyActivity, setWeeklyActivity] = useState([])
 
-  // Vitals & Wearable States
+  // Vitals State
   const [latestVitals, setLatestVitals] = useState(null)
-  const [wearableSource, setWearableSource] = useState("")
   const [isManualModalOpen, setIsManualModalOpen] = useState(false)
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
 
   // Manual Form States
   const [manualForm, setManualForm] = useState({
@@ -74,9 +72,6 @@ export default function PatientDashboard() {
       }
       if (vitalsRes.status === 'fulfilled' && vitalsRes.value.data.success) {
         setLatestVitals(vitalsRes.value.data.data)
-      }
-      if (meRes.status === 'fulfilled' && meRes.value.data.success) {
-        setWearableSource(meRes.value.data.data.wearableSource || "")
       }
       if (activityRes.status === 'fulfilled' && activityRes.value.data.success) {
         setWeeklyActivity(activityRes.value.data.data)
@@ -146,54 +141,7 @@ export default function PatientDashboard() {
     }
   }
 
-  // Connect Wearable Sync Handler
-  const handleConnectWearable = async (source) => {
-    try {
-      const profileRes = await api.patch('/auth/profile', { wearableSource: source })
-      if (profileRes.data.success) {
-        setWearableSource(source)
 
-        // Generate and post simulated vitals
-        const simulatedVitals = {
-          heartRate: Math.floor(Math.random() * (85 - 62 + 1)) + 62, // 62 - 85 bpm
-          systolicBP: Math.floor(Math.random() * (128 - 114 + 1)) + 114, // 114 - 128
-          diastolicBP: Math.floor(Math.random() * (84 - 72 + 1)) + 72, // 72 - 84
-          temperature: (97.7 + Math.random() * 1.3).toFixed(1), // 97.7 - 99.0 °F
-          oxygenLevel: Math.floor(Math.random() * (100 - 96 + 1)) + 96, // 96 - 100%
-          weight: 71.8,
-          bloodSugar: Math.floor(Math.random() * (115 - 82 + 1)) + 82, // 82 - 115 mg/dL
-          source: 'smartwatch',
-          recordedAt: new Date()
-        }
-
-        const vitalsRes = await api.post('/patient/vitals', simulatedVitals)
-        if (vitalsRes.data.success) {
-          setLatestVitals(vitalsRes.data.data)
-          fetchDashboardData()
-        }
-
-        toast.success(`Successfully connected to ${source} and synced dynamic vitals!`)
-        setIsSyncModalOpen(false)
-      }
-    } catch (error) {
-      console.error("Failed to connect wearable:", error)
-      toast.error("Failed to connect wearable")
-    }
-  }
-
-  const handleDisconnectWearable = async () => {
-    try {
-      const profileRes = await api.patch('/auth/profile', { wearableSource: "" })
-      if (profileRes.data.success) {
-        setWearableSource("")
-        toast.success("Wearable disconnected successfully.")
-        setIsSyncModalOpen(false)
-      }
-    } catch (error) {
-      console.error("Failed to disconnect wearable:", error)
-      toast.error("Failed to disconnect wearable")
-    }
-  }
 
   const upcomingAppointments = appointments.filter(a =>
     a.status === "Upcoming" || a.status === "scheduled" || a.status === "Scheduled" || a.status === "confirmed"
@@ -242,43 +190,26 @@ export default function PatientDashboard() {
         </CardContent>
       </Card>
 
-      {/* Dynamic Vitals Banner */}
-      <Card className="border-teal-100 bg-gradient-to-r from-teal-50/60 to-emerald-50/40 border shadow-sm">
+      {/* Health Vitals Banner */}
+      <Card className="border-teal-100 bg-linear-to-r from-teal-50/60 to-emerald-50/40 border shadow-sm">
         <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100/80 text-teal-600">
-              <Watch className="h-6 w-6 animate-pulse" />
+              <Activity className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">Smartwatch & Patient Vitals Sync</h3>
+              <h3 className="font-bold text-slate-900 text-base">Patient Health Vitals</h3>
               <p className="text-sm text-slate-600 mt-0.5">
-                {wearableSource ? (
-                  <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                    </span>
-                    Vitals syncing automatically ({wearableSource})
-                  </span>
-                ) : (
-                  <span className="text-slate-500">Connect a wearable or enter vitals manually.</span>
-                )}
+                Keep your health markers updated for physician consults and AI triage.
               </p>
             </div>
           </div>
           <div className="flex gap-3 w-full sm:w-auto shrink-0 justify-end">
             <Button
-              variant="outline"
-              className="border-teal-200 text-teal-700 hover:bg-teal-50 gap-1.5 text-xs py-2 h-9 font-semibold"
+              className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 text-xs py-2 h-9 font-bold shadow-sm"
               onClick={() => setIsManualModalOpen(true)}
             >
-              <Plus className="h-3.5 w-3.5" /> Manual Entry
-            </Button>
-            <Button
-              className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5 text-xs py-2 h-9 font-bold shadow-sm"
-              onClick={() => setIsSyncModalOpen(true)}
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> {wearableSource ? "Manage Sync" : "Connect Smartwatch"}
+              <Plus className="h-3.5 w-3.5" /> Log New Vitals
             </Button>
           </div>
         </CardContent>
@@ -286,18 +217,18 @@ export default function PatientDashboard() {
 
       {/* Health Overview Stat Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/patient/vitals" className="block transition-transform hover:scale-[1.02]">
+        <div className="block">
           <StatCard
             title="Heart Rate"
             value={latestVitals?.heartRate ? `${latestVitals.heartRate} bpm` : "Not recorded yet"}
             icon={HeartPulse}
             trend={latestVitals?.heartRate ? (latestVitals.heartRate > 100 ? "up" : latestVitals.heartRate < 60 ? "down" : "stable") : "stable"}
             trendValue={latestVitals?.heartRate ? "--" : undefined}
-            description={latestVitals ? `Source: ${latestVitals.source === 'smartwatch' ? 'Wearable Sync' : 'Manual Entry'}` : "Average resting heart rate"}
+            description={latestVitals ? "Resting heart rate" : "Average resting heart rate"}
             className={!latestVitals ? "border-slate-100 bg-slate-50/50" : ""}
           />
-        </Link>
-        <Link href="/patient/vitals" className="block transition-transform hover:scale-[1.02]">
+        </div>
+        <div className="block">
           <StatCard
             title="Blood Pressure"
             value={(latestVitals?.systolicBP && latestVitals?.diastolicBP) ? `${latestVitals.systolicBP}/${latestVitals.diastolicBP} mmHg` : "Not recorded yet"}
@@ -305,18 +236,18 @@ export default function PatientDashboard() {
             description={latestVitals?.recordedAt ? `Last checked: ${new Date(latestVitals.recordedAt).toLocaleDateString()}` : "Last checked: Recently"}
             className={!latestVitals ? "border-slate-100 bg-slate-50/50" : ""}
           />
-        </Link>
-        <Link href="/patient/vitals" className="block transition-transform hover:scale-[1.02]">
+        </div>
+        <div className="block">
           <StatCard
             title="Weight"
             value={latestVitals?.weight ? `${latestVitals.weight} kg` : "Not recorded yet"}
             icon={Weight}
             trend="stable"
             trendValue={latestVitals?.weight ? "--" : undefined}
-            description={latestVitals ? `Source: ${latestVitals.source}` : "From last vitals submission"}
+            description={latestVitals ? "Recorded patient weight" : "From last vitals submission"}
             className={!latestVitals ? "border-slate-100 bg-slate-50/50" : ""}
           />
-        </Link>
+        </div>
         <Link href="/patient/appointments" className="block transition-transform hover:scale-[1.02]">
           <StatCard
             title="Appointments"
@@ -335,14 +266,14 @@ export default function PatientDashboard() {
         {/* Main Content Area */}
         <div className="lg:col-span-4 space-y-6">
           {/* Health Activity Graph */}
-          <Card className="h-[300px]">
+          <Card className="h-75">
             <CardHeader>
               <CardTitle>Health Activity</CardTitle>
               <CardDescription>Your health engagement over the last 7 days.</CardDescription>
             </CardHeader>
             <CardContent className="px-6 pb-4">
               {weeklyActivity.length === 0 || weeklyActivity.every(d => d.activity === 0) ? (
-                <div className="flex flex-col items-center justify-center h-[180px] text-center">
+                <div className="flex flex-col items-center justify-center h-45 text-center">
                   <Activity className="h-8 w-8 text-slate-200 mb-3" />
                   <p className="text-sm font-semibold text-slate-400">No activity recorded this week.</p>
                   <p className="text-xs text-slate-300 mt-1">Start a checkup, book an appointment, or log vitals to see your progress.</p>
@@ -350,7 +281,7 @@ export default function PatientDashboard() {
               ) : (() => {
                 const maxAct = Math.max(...weeklyActivity.map(d => d.activity), 1);
                 return (
-                  <div className="flex items-end gap-2 h-[180px] mt-2">
+                  <div className="flex items-end gap-2 h-45 mt-2">
                     {weeklyActivity.map((d, i) => {
                       const pct = Math.round((d.activity / maxAct) * 100);
                       const heightPct = Math.max(pct, d.activity > 0 ? 8 : 0);
@@ -461,7 +392,7 @@ export default function PatientDashboard() {
                           <p className="text-xs text-slate-600 line-clamp-2">{notif.message}</p>
                           <p className="text-[10px] text-slate-400 mt-1">{new Date(notif.createdAt).toLocaleString()}</p>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
                       </div>
                     </Link>
                   ))
@@ -669,128 +600,6 @@ export default function PatientDashboard() {
         </form>
       </Modal>
 
-      {/* SMARTWATCH / WEARABLE SYNC MODAL */}
-      <Modal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        title="Connect Smartwatch / Wearable"
-      >
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Sync your wearable devices with MediAI to automatically track your daily resting heart rate, activity blood pressure, sleeping temperature, and blood oxygen levels.
-            </p>
-          </div>
-
-          {wearableSource ? (
-            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                  <Watch className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-emerald-900">Connected to {wearableSource}</p>
-                  <p className="text-xs text-emerald-700">Vitals are syncing automatically in real-time.</p>
-                </div>
-              </div>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDisconnectWearable}
-              >
-                Disconnect
-              </Button>
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Select your wearable sync source</p>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { name: "Apple Health" },
-              { name: "Google Fit" },
-              { name: "Fitbit" },
-              { name: "Samsung Health" }
-            ].map((source) => {
-              const getBrandColors = (name) => {
-                switch (name) {
-                  case "Apple Health":
-                    return {
-                      bg: "#FFE4E6",
-                      border: "#FECDD3",
-                      text: "#E11D48"
-                    };
-                  case "Google Fit":
-                    return {
-                      bg: "#DBEAFE",
-                      border: "#BFDBFE",
-                      text: "#2563EB"
-                    };
-                  case "Fitbit":
-                    return {
-                      bg: "#CCFBF1",
-                      border: "#99F6E4",
-                      text: "#0D9488"
-                    };
-                  case "Samsung Health":
-                    return {
-                      bg: "#FEF3C7",
-                      border: "#FDE68A",
-                      text: "#D97706"
-                    };
-                  default:
-                    return {
-                      bg: "#F1F5F9",
-                      border: "#E2E8F0",
-                      text: "#475569"
-                    };
-                }
-              };
-              const colors = getBrandColors(source.name);
-              return (
-                <button
-                  key={source.name}
-                  onClick={() => handleConnectWearable(source.name)}
-                  disabled={wearableSource === source.name}
-                  className={`flex flex-col items-center justify-center p-5 rounded-2xl border transition-all hover:shadow-md cursor-pointer ${wearableSource === source.name ? "opacity-50 cursor-not-allowed border-dashed ring-2 ring-emerald-500" : ""
-                    }`}
-                  style={{
-                    background: `linear-gradient(to bottom right, ${colors.bg}60, ${colors.bg}20)`,
-                    borderColor: colors.border
-                  }}
-                >
-                  <div
-                    className="h-12 w-12 rounded-full border flex items-center justify-center mb-3 shadow-sm"
-                    style={{
-                      backgroundColor: colors.bg,
-                      borderColor: colors.border
-                    }}
-                  >
-                    <Watch
-                      className="h-6 w-6 stroke-[2.5]"
-                      style={{ stroke: colors.text }}
-                    />
-                  </div>
-                  <span className="font-bold text-xs text-slate-800">{source.name}</span>
-                  {wearableSource === source.name && (
-                    <span className="text-[10px] mt-1 font-bold text-emerald-600">Active Connection</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-slate-100">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsSyncModalOpen(false)}
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }

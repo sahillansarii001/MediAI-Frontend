@@ -200,9 +200,11 @@ export default function SymptomChecker() {
           }
           return;
         }
-        if (aiResponse.followUpQuestion) {
+        const isAssessmentComplete = (aiResponse.isAssessmentReady === true || (!aiResponse.followUpQuestion && aiResponse.possibleCondition)) && (aiResponse.possibleCondition && aiResponse.riskLevel);
+
+        if (!isAssessmentComplete && aiResponse.followUpQuestion) {
           setMessages(prev => [...prev, { sender: "ai", content: aiResponse.followUpQuestion }]);
-        } else {
+        } else if (isAssessmentComplete) {
           setAnalysisData(aiResponse);
           setShowAnalysis(true);
           const choiceMsg = aiResponse.riskLevel === 'High' || aiResponse.riskLevel === 'Critical'
@@ -210,6 +212,9 @@ export default function SymptomChecker() {
             : `Thank you for the details. Based on your symptoms, I've generated an initial assessment (see the panel on the right).\n\nWould you like to consult a doctor on the platform, or continue with AI guidance for now?`;
           setMessages(prev => [...prev, { sender: "ai", content: choiceMsg }]);
           setShowChoiceButtons(true);
+        } else {
+          // Fallback if no follow-up was provided but assessment isn't complete yet
+          setMessages(prev => [...prev, { sender: "ai", content: aiResponse.followUpQuestion || "Could you provide more details about how long you've had this symptom and how severe it feels on a scale of 1 to 10?" }]);
         }
       } else {
         throw new Error("Invalid AI response");
@@ -257,9 +262,9 @@ export default function SymptomChecker() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
+    <div className="min-h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
       {/* Main Chat Area */}
-      <div className={`flex flex-col h-full transition-all duration-300 ${showAnalysis ? 'w-full md:w-7/12 lg:w-8/12' : 'w-full'}`}>
+      <div className={`flex flex-col h-130 md:h-full transition-all duration-300 ${showAnalysis ? 'w-full md:w-7/12 lg:w-8/12' : 'w-full'}`}>
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200 flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
@@ -288,18 +293,18 @@ export default function SymptomChecker() {
         {showChoiceButtons && (
           <div className="flex gap-2 mt-3 px-4 animate-in slide-in-from-bottom-2 duration-300 flex-wrap">
             <Button
-              className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white font-semibold gap-2 shadow-lg shadow-teal-100 min-w-[140px]"
+              className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white font-semibold gap-2 shadow-lg shadow-teal-100 min-w-35"
               onClick={() => handleConsultDoctor("Find Doctors")}
             >
               <Stethoscope className="h-5 w-5" /> Find Doctors
             </Button>
             <Button
-              className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white font-semibold gap-2 shadow-lg shadow-teal-100 min-w-[140px]"
+              className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white font-semibold gap-2 shadow-lg shadow-teal-100 min-w-35"
               onClick={() => handleConsultDoctor("Book Appointment")}
             >
               <Calendar className="h-5 w-5" /> Book Appointment
             </Button>
-            <Button variant="outline" className="flex-1 h-12 border-slate-200 text-slate-700 font-semibold gap-2 hover:bg-slate-50 min-w-[160px]" onClick={handleContinueAI}>
+            <Button variant="outline" className="flex-1 h-12 border-slate-200 text-slate-700 font-semibold gap-2 hover:bg-slate-50 min-w-40" onClick={handleContinueAI}>
               <MessageSquare className="h-5 w-5" /> Continue with AI
             </Button>
           </div>

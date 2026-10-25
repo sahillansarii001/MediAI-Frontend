@@ -1,14 +1,31 @@
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#0d9488",
+};
+
 export const metadata = {
-  title: "Medi AI",
-  description: "Advanced Healthcare AI Platform",
+  title: "MediAI — Clinical Intelligence & Connected Healthcare Ecosystem",
+  description: "Next-generation clinical AI assistant, emergency telemetry dispatch, prescription OCR, and verified physician network.",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.ico",
@@ -22,9 +39,9 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-    className={`${inter.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${mono.variable} h-full antialiased selection:bg-teal-500 selection:text-white`}
     >
-      <body className="min-h-full flex flex-col select-none">
+      <body className="min-h-full flex flex-col font-sans">
         <AuthProvider>
           <Toaster position="top-right" />
           {children}

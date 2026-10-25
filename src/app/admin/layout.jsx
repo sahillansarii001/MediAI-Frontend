@@ -7,7 +7,7 @@ import { Topbar } from "@/components/layout/Topbar"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
-import { io } from "socket.io-client"
+import { getSocket } from "@/lib/socket"
 
 export default function AdminLayout({ children }) {
   const router = useRouter()
@@ -30,21 +30,14 @@ export default function AdminLayout({ children }) {
 
   // Socket.io Setup for Admin Notifications
   useEffect(() => {
-    let socket;
     if (isReady && role === 'admin') {
-      console.log(`[Socket] Admin socket connecting...`);
-      
-      const socketUrl = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : 'http://localhost:5000';
+      const socket = getSocket();
+      if (!socket) return;
 
-      socket = io(socketUrl, {
-        withCredentials: true
-      });
-
-      socket.on("connect", () => {
-        console.log(`[Socket] Admin joined room: admin_room and admin`);
+      const handleConnect = () => {
         socket.emit("joinRoom", "admin_room");
         socket.emit("joinRoom", "admin"); // Join the emergency room
-      });
+      };
 
       socket.on("connect_error", (err) => {
         console.error("[Socket] Admin connection error:", err);
@@ -85,7 +78,7 @@ export default function AdminLayout({ children }) {
             title="Click to dismiss"
           >
             <span>{data.message}</span>
-            <span className="ml-3 text-red-800 hover:text-red-950 font-extrabold text-sm flex-shrink-0">✕</span>
+            <span className="ml-3 text-red-800 hover:text-red-950 font-extrabold text-sm shrink-0">✕</span>
           </div>
         ), {
           duration: 10000,
@@ -142,21 +135,17 @@ export default function AdminLayout({ children }) {
         window.dispatchEvent(new CustomEvent("refreshAdminTransactions"));
       });
 
-      socket.on("medicineStockUpdated", () => {
-        console.log(`[Socket] Admin received medicineStockUpdated`);
-        window.dispatchEvent(new CustomEvent("medicineStockUpdated"));
-      });
-
-      socket.on("disconnect", () => {
-        console.log("[Socket] Admin disconnected");
-      });
+      return () => {
+        // Detach listeners without disconnecting pooled socket
+        socket.off("emergency_alert");
+        socket.off("appointmentCancelledAdmin");
+        socket.off("medicineStockUpdated");
+        socket.off("new_medicine_order");
+        socket.off("orderDeletedAdmin");
+        socket.off("new_appointment_payment");
+        socket.off("new_transaction");
+      };
     }
-
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
   }, [isReady, role, user]);
 
   if (!authLoaded || !isReady) {
