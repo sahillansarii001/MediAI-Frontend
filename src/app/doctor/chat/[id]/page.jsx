@@ -209,7 +209,7 @@ export default function DoctorChatSession() {
   // Polling for messages
   useEffect(() => {
     let interval;
-    if (chat && chat.status !== 'ended') {
+    if (chatId && chat?.status !== 'ended') {
       interval = setInterval(async () => {
         try {
           const res = await api.get(`/chats/${chatId}`)
@@ -226,10 +226,10 @@ export default function DoctorChatSession() {
             clearInterval(interval)
           }
         } catch (err) { }
-      }, 5000)
+      }, 3000)
     }
     return () => clearInterval(interval)
-  }, [chat, chatId])
+  }, [chatId, chat?.status])
 
   // Fetch report when chat is ended
   useEffect(() => {

@@ -214,6 +214,7 @@ export default function DoctorChat() {
           return [...prev, {
             sender: data.message.senderModel === 'Doctor' ? 'doctor' : 'user',
             content: data.message.content,
+            imageUrl: data.message.imageUrl,
             timestamp: data.message.timestamp,
             _id: data.message._id
           }];
