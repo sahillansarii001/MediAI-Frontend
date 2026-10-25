@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Mic, Paperclip, Trash2, Camera, Image } from "lucide-react"
+import { Send, Mic, Paperclip, Trash2, Camera, Image, CheckCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "react-hot-toast"
 
@@ -18,9 +18,11 @@ export function ChatWindow({
   messages,
   onSendMessage,
   onDeleteMessage,
+  onTyping,
   title,
   subtitle,
   isTyping = false,
+  typingText = "typing...",
   headerRight,
   placeholder = "Type a message...",
   disabled = false
@@ -202,16 +204,29 @@ export function ChatWindow({
                   </div>
                 )}
                 <div className="leading-relaxed break-words">{msg.content}</div>
-                {msg.timestamp && (
-                  <span
-                    className={cn(
-                      "text-[9px] self-end leading-none mt-0.5 select-none font-medium tracking-wide",
-                      isOwn ? "text-teal-200" : "text-slate-400"
-                    )}
-                  >
-                    {formatTime(msg.timestamp)}
-                  </span>
-                )}
+                <div className="flex items-center justify-end gap-1 self-end mt-0.5 select-none">
+                  {msg.timestamp && (
+                    <span
+                      className={cn(
+                        "text-[9px] leading-none font-medium tracking-wide",
+                        isOwn ? "text-teal-100/90" : "text-slate-400"
+                      )}
+                    >
+                      {formatTime(msg.timestamp)}
+                    </span>
+                  )}
+                  {isOwn && (
+                    <CheckCheck
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 stroke-[2.5]",
+                        msg.status === "seen"
+                          ? "text-sky-300 fill-sky-300/20"
+                          : "text-teal-200/80"
+                      )}
+                      title={msg.status === "seen" ? "Seen" : "Delivered"}
+                    />
+                  )}
+                </div>
                 {msg.options && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {msg.options.map((opt, i) => (
@@ -241,11 +256,14 @@ export function ChatWindow({
           );
         })}
         {isTyping && (
-          <div className="flex max-w-[85%] mr-auto justify-start">
-            <div className="rounded-2xl px-4 py-3 bg-white border border-slate-200 rounded-tl-none shadow-sm flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div className="flex max-w-[85%] mr-auto justify-start animate-in fade-in duration-200">
+            <div className="rounded-2xl px-4 py-2.5 bg-white border border-slate-200 rounded-tl-none shadow-sm flex items-center gap-2">
+              <span className="text-xs font-semibold text-teal-700">{typingText}</span>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
             </div>
           </div>
         )}
@@ -298,7 +316,10 @@ export function ChatWindow({
           <Input
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (onTyping) onTyping();
+            }}
             placeholder={disabled ? "Consultation is inactive or doctor is away" : placeholder}
             disabled={disabled}
             className="flex-1 bg-slate-50 border-transparent focus-visible:ring-teal-600 focus-visible:bg-white rounded-full px-4 text-sm py-2 disabled:opacity-60 disabled:cursor-not-allowed"

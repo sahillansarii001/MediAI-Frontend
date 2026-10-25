@@ -28,6 +28,9 @@ export default function DoctorChat() {
   const [selectedHistoryChat, setSelectedHistoryChat] = useState(null)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [chatSocket, setChatSocket] = useState(null)
+  const [isDoctorTyping, setIsDoctorTyping] = useState(false)
+  const doctorTypingTimerRef = useRef(null)
+  const emitTypingTimerRef = useRef(null)
 
   // Patient Chat History Dashboard States
   const [patientChats, setPatientChats] = useState([])
@@ -216,6 +219,7 @@ export default function DoctorChat() {
 
     const handleMessageReceived = (data) => {
       if (data.chatId === chat._id) {
+        setIsDoctorTyping(false);
         setMessages(prev => {
           if (prev.some(m => m._id === data.message._id)) return prev;
           return [...prev, {
@@ -223,9 +227,34 @@ export default function DoctorChat() {
             content: data.message.content,
             imageUrl: data.message.imageUrl,
             timestamp: data.message.timestamp,
+            status: data.message.status || 'delivered',
             _id: data.message._id
           }];
         });
+      }
+    };
+
+    const handleMessagesSeen = (data) => {
+      if (data.chatId === chat._id) {
+        setMessages(prev =>
+          prev.map(m => m.sender === 'user' ? { ...m, status: 'seen' } : m)
+        );
+      }
+    };
+
+    const handleDoctorTypingEvent = (data) => {
+      if (data.chatId === chat._id && data.senderModel === 'Doctor') {
+        setIsDoctorTyping(true);
+        if (doctorTypingTimerRef.current) clearTimeout(doctorTypingTimerRef.current);
+        doctorTypingTimerRef.current = setTimeout(() => {
+          setIsDoctorTyping(false);
+        }, 3000);
+      }
+    };
+
+    const handleDoctorStopTypingEvent = (data) => {
+      if (data.chatId === chat._id && data.senderModel === 'Doctor') {
+        setIsDoctorTyping(false);
       }
     };
 
@@ -251,6 +280,9 @@ export default function DoctorChat() {
 
     socket.on('connect', handleConnect);
     socket.on('messageReceived', handleMessageReceived);
+    socket.on('messagesSeen', handleMessagesSeen);
+    socket.on('typing', handleDoctorTypingEvent);
+    socket.on('stopTyping', handleDoctorStopTypingEvent);
     socket.on('messageDeleted', handleMessageDeleted);
     socket.on('consultationEnded', handleConsultationEnded);
     socket.on('reportReady', handleReportReady);
@@ -271,6 +303,9 @@ export default function DoctorChat() {
     return () => {
       socket.off('connect', handleConnect);
       socket.off('messageReceived', handleMessageReceived);
+      socket.off('messagesSeen', handleMessagesSeen);
+      socket.off('typing', handleDoctorTypingEvent);
+      socket.off('stopTyping', handleDoctorStopTypingEvent);
       socket.off('messageDeleted', handleMessageDeleted);
       socket.off('consultationEnded', handleConsultationEnded);
       socket.off('reportReady', handleReportReady);
@@ -305,6 +340,7 @@ export default function DoctorChat() {
             content: m.content,
             imageUrl: m.imageUrl,
             timestamp: m.timestamp,
+            status: m.status || 'delivered',
             _id: m._id
           }))
           setMessages(formattedMessages)
@@ -346,9 +382,26 @@ export default function DoctorChat() {
     return () => clearInterval(interval)
   }, [consultationEnded, chat, doctorId])
 
+  const handlePatientTyping = () => {
+    if (!chat?._id) return;
+    const socket = getSocket();
+    if (!socket) return;
+    socket.emit('typing', { chatId: chat._id, senderModel: 'User' });
+    if (emitTypingTimerRef.current) clearTimeout(emitTypingTimerRef.current);
+    emitTypingTimerRef.current = setTimeout(() => {
+      socket.emit('stopTyping', { chatId: chat._id, senderModel: 'User' });
+    }, 2500);
+  };
+
   const handleSendMessage = async (content, imageFile) => {
     if (!chat) return
     try {
+      if (emitTypingTimerRef.current) clearTimeout(emitTypingTimerRef.current);
+      const socket = getSocket();
+      if (socket && chat._id) {
+        socket.emit('stopTyping', { chatId: chat._id, senderModel: 'User' });
+      }
+
       let imageUrl = null;
       if (imageFile) {
         const formData = new FormData();
@@ -368,6 +421,7 @@ export default function DoctorChat() {
         content: m.content,
         imageUrl: m.imageUrl,
         timestamp: m.timestamp,
+        status: m.status || 'delivered',
         _id: m._id
       }))
       setMessages(formattedMessages)
@@ -857,6 +911,9 @@ export default function DoctorChat() {
           messages={messages}
           onSendMessage={handleSendMessage}
           onDeleteMessage={!consultationEnded ? handleDeleteMessage : undefined}
+          onTyping={handlePatientTyping}
+          isTyping={isDoctorTyping}
+          typingText={`Dr. ${doctor.fullName} is typing...`}
           disabled={consultationEnded || chat?.status !== 'active'}
           headerRight={
             <div className="flex items-center gap-2">
