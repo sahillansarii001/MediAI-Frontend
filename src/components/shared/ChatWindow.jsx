@@ -117,13 +117,20 @@ export function ChatWindow({
     };
   }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  const messagesContainerRef = useRef(null)
+
+  const scrollToBottom = (behavior = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: behavior
+      })
+    }
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, isTyping])
+    scrollToBottom("smooth")
+  }, [messages?.length, isTyping])
 
   const handleSend = (e) => {
     e.preventDefault()
@@ -157,7 +164,10 @@ export function ChatWindow({
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-250 scrollbar-track-transparent">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-250 scrollbar-track-transparent overscroll-contain"
+      >
         {messages.map((msg, index) => {
           const isOwn = msg.sender === "user";
           return (

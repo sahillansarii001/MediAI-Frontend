@@ -819,7 +819,7 @@ export default function DoctorChat() {
   return (
     <div className="min-h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
       {/* Main Chat Area */}
-      <div className="flex flex-col h-140 md:h-full w-full md:w-8/12">
+      <div className="flex flex-col h-[75vh] md:h-full w-full md:w-8/12">
         {chat?.status === 'rescheduled' && chat.messages?.length > 0 && (
           <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-800 text-sm font-semibold shadow-sm animate-in slide-in-from-top duration-300 shrink-0">
             <Clock className="h-5 w-5 text-amber-500 animate-pulse" />
