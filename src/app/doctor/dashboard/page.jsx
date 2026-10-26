@@ -13,6 +13,7 @@ import Link from "next/link"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { useAuth } from "@/context/AuthContext"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function DoctorDashboard() {
   const { user: authUser } = useAuth()
@@ -97,7 +98,7 @@ export default function DoctorDashboard() {
               Verified Physician Portal
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Welcome back, Dr. {currentDoctor.fullName || currentDoctor.name || "Physician"}
+              Welcome back, {formatDoctorName(currentDoctor.fullName || currentDoctor.name || "Physician")}
             </h1>
             <p className="text-slate-300 text-sm max-w-xl">
               Specialization: <span className="text-teal-300 font-semibold">{currentDoctor.specialization || "General Medicine"}</span> • {currentDoctor.hospitalName || "MediAI Clinical Network"}

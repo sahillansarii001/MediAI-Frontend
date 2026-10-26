@@ -11,6 +11,7 @@ import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function AppointmentsPage() {
   const router = useRouter()
@@ -356,7 +357,7 @@ export default function AppointmentsPage() {
 
               <h2 className="text-xl font-bold text-slate-900 text-center">It's appointment time!</h2>
               <p className="text-slate-500 text-sm text-center mt-2">
-                Your appointment with <span className="font-semibold text-slate-700">Dr. {chatNowAlert.doctorName}</span> is happening now.
+                Your appointment with <span className="font-semibold text-slate-700">{formatDoctorName(chatNowAlert.doctorName)}</span> is happening now.
               </p>
               <p className="text-xs text-slate-400 text-center mt-1">⏰ {chatNowAlert.time}</p>
 
@@ -464,7 +465,7 @@ export default function AppointmentsPage() {
                 <div className="flex-1 p-6 flex flex-col sm:flex-row gap-6 sm:items-center justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-slate-900">Dr. {apt.doctor?.fullName || 'Unknown'}</h3>
+                      <h3 className="text-xl font-semibold text-slate-900">{formatDoctorName(apt.doctor?.fullName || 'Unknown')}</h3>
                       {getStatusBadge(apt.status)}
                       
                       {apt.paymentStatus === 'paid' ? (
@@ -592,7 +593,7 @@ export default function AppointmentsPage() {
               <option value="" disabled>Select a doctor...</option>
               {doctors.map(doc => (
                 <option key={doc._id} value={doc._id}>
-                  Dr. {doc.fullName} - {doc.specialization}
+                  {formatDoctorName(doc.fullName)} - {doc.specialization}
                 </option>
               ))}
             </select>

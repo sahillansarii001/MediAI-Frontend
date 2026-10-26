@@ -14,6 +14,7 @@ import { toast } from "react-hot-toast"
 import { getSocket } from "@/lib/socket"
 import { useAuth } from "@/context/AuthContext"
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function DoctorChatSession() {
   const params = useParams()
@@ -871,7 +872,7 @@ export default function DoctorChatSession() {
                     </div>
                     <div className="py-6 border-b border-slate-100 flex flex-col gap-1.5">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Doctor</p>
-                      <p className="text-sm font-medium text-slate-900">Dr. {user?.fullName || "Unknown Doctor"}</p>
+                      <p className="text-sm font-medium text-slate-900">{formatDoctorName(user?.fullName || "Unknown Doctor")}</p>
                     </div>
                   </div>
 

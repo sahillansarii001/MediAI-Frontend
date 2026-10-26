@@ -10,6 +10,7 @@ import { Search, FileText, Eye, Download, X, ChevronLeft, ChevronRight, Chevrons
 import api from "@/lib/api"
 import jsPDF from "jspdf"
 import { toast } from "react-hot-toast"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function AdminReports() {
   const [reports, setReports] = useState([])
@@ -252,7 +253,7 @@ export default function AdminReports() {
               </div>
               <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Doctor</p>
-                <p className="font-medium text-slate-900">Dr. {selectedReport.doctor?.fullName || "Unknown"}</p>
+                <p className="font-medium text-slate-900">{formatDoctorName(selectedReport.doctor?.fullName || "Unknown")}</p>
               </div>
             </div>
 

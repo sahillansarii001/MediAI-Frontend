@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/modal"
 import { FileText, Download, Activity, CheckCircle2, AlertCircle, Clock, Eye, Calendar, User, Stethoscope } from "lucide-react"
 import api from "@/lib/api"
 import { jsPDF } from "jspdf"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function HealthReports() {
   const [reports, setReports] = useState([])
@@ -175,7 +176,7 @@ export default function HealthReports() {
                       </div>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 mt-2">
                         <span className="font-semibold text-slate-700 flex items-center gap-1">
-                          <User className="h-3.5 w-3.5 text-slate-400" /> Dr. {report.doctor?.fullName || 'Unknown'}
+                          <User className="h-3.5 w-3.5 text-slate-400" /> {formatDoctorName(report.doctor?.fullName || 'Unknown')}
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
@@ -238,7 +239,7 @@ export default function HealthReports() {
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-slate-800">{selectedReport.title}</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Verified by <span className="font-semibold text-slate-700">Dr. {selectedReport.doctor?.fullName}</span> ({selectedReport.doctor?.specialization || 'Clinical Specialist'})
+                  Verified by <span className="font-semibold text-slate-700">{formatDoctorName(selectedReport.doctor?.fullName)}</span> ({selectedReport.doctor?.specialization || 'Clinical Specialist'})
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">Date: {new Date(selectedReport.createdAt).toLocaleString()}</p>
               </div>

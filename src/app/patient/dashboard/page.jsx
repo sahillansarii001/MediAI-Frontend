@@ -15,6 +15,7 @@ import Link from "next/link"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { useAuth } from "@/context/AuthContext"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function PatientDashboard() {
   const { user: authUser } = useAuth()
@@ -440,7 +441,7 @@ export default function PatientDashboard() {
                   <div key={apt._id || apt.id} className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="font-bold text-slate-900 text-sm">Dr. {apt.doctor?.fullName || "Physician"}</h4>
+                        <h4 className="font-bold text-slate-900 text-sm">{formatDoctorName(apt.doctor?.fullName || "Physician")}</h4>
                         <p className="text-xs text-indigo-700 font-medium">{apt.doctor?.specialization || "Clinical Specialist"}</p>
                       </div>
                       <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-800 uppercase">

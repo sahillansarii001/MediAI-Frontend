@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ChatWindow } from "@/components/shared/ChatWindow"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,6 +11,7 @@ import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { getSocket } from "@/lib/socket"
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function DoctorChat() {
   const searchParams = useSearchParams()
@@ -625,7 +626,7 @@ export default function DoctorChat() {
                           />
                         </div>
                         <div className="flex flex-col justify-center">
-                          <h3 className="font-bold text-slate-800 text-base leading-tight">Dr. {docName}</h3>
+                          <h3 className="font-bold text-slate-800 text-base leading-tight">{formatDoctorName(docName)}</h3>
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{spec}</p>
                         </div>
                       </div>
@@ -641,7 +642,7 @@ export default function DoctorChat() {
                     >
                       <span className="line-clamp-2 w-full font-medium">
                         {lastMsg
-                          ? `${lastMsg.senderModel === 'Doctor' ? `Dr. ${docName}` : 'You'}: "${lastMsg.content}"`
+                          ? `${lastMsg.senderModel === 'Doctor' ? formatDoctorName(docName) : 'You'}: "${lastMsg.content}"`
                           : "No messages in this chat session yet."}
                       </span>
                     </div>
@@ -718,7 +719,7 @@ export default function DoctorChat() {
                 <div>
                   <h3 className="text-lg font-bold">Past Consultation</h3>
                   <p className="text-teal-100 text-xs mt-0.5">
-                    {new Date(selectedHistoryChat.createdAt).toLocaleString()} with Dr. {selectedHistoryChat.doctor?.fullName || "Doctor"}
+                    {new Date(selectedHistoryChat.createdAt).toLocaleString()} with {formatDoctorName(selectedHistoryChat.doctor?.fullName || "Doctor")}
                   </p>
                 </div>
                 <button
@@ -806,7 +807,7 @@ export default function DoctorChat() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Requesting Consultation</h2>
-            <p className="text-slate-500 mt-2">Waiting for Dr. {doctor.fullName} to accept your request...</p>
+            <p className="text-slate-500 mt-2">Waiting for {formatDoctorName(doctor.fullName)} to accept your request...</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
             <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Doctor Availability</p>
@@ -860,7 +861,7 @@ export default function DoctorChat() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Doctor is Busy</h2>
-            <p className="text-slate-500 mt-2">Dr. {doctor.fullName} has declined your consultation request.</p>
+            <p className="text-slate-500 mt-2">{formatDoctorName(doctor.fullName)} has declined your consultation request.</p>
           </div>
           <div className="p-5 bg-amber-50 rounded-xl border border-amber-100 text-left">
             <p className="text-xs text-amber-600 uppercase font-bold mb-3">Status</p>
@@ -883,17 +884,17 @@ export default function DoctorChat() {
         {chat?.status === 'rescheduled' && chat.messages?.length > 0 && (
           <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-800 text-sm font-semibold shadow-sm animate-in slide-in-from-top duration-300 shrink-0">
             <Clock className="h-5 w-5 text-amber-500 animate-pulse" />
-            <span>Dr. {doctor.fullName} has rescheduled your consultation to {chat.scheduledTime || "To be confirmed"}. You can still read their messages here.</span>
+            <span>{formatDoctorName(doctor.fullName)} has rescheduled your consultation to {chat.scheduledTime || "To be confirmed"}. You can still read their messages here.</span>
           </div>
         )}
         {doctor?.onlineStatus === 'break' && (
           <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3 text-orange-800 text-sm font-semibold shadow-sm animate-in slide-in-from-top duration-300 shrink-0">
             <Clock className="h-5 w-5 text-orange-500 animate-pulse" />
-            <span>Dr. {doctor.fullName} is currently on break. You can compose messages, but they will not be sent until the break ends.</span>
+            <span>{formatDoctorName(doctor.fullName)} is currently on break. You can compose messages, but they will not be sent until the break ends.</span>
           </div>
         )}
         <ChatWindow
-          title={`Consultation with Dr. ${doctor.fullName}`}
+          title={`Consultation with ${formatDoctorName(doctor.fullName)}`}
           subtitle={(() => {
             const formatTime12 = (t) => {
               if (!t) return '';
@@ -985,7 +986,7 @@ export default function DoctorChat() {
               <div className="h-20 w-20 mx-auto rounded-full bg-teal-50 flex items-center justify-center overflow-hidden mb-4 border-2 border-white shadow-sm">
                 <span className="text-3xl font-bold text-teal-600">{doctor.fullName.charAt(0)}</span>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900">Dr. {doctor.fullName}</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{formatDoctorName(doctor.fullName)}</h3>
               <p className="text-sm text-slate-500 mb-2">{doctor.specialization}</p>
               <Badge
                 className="font-extrabold text-[9px] uppercase px-2.5 py-0.5 border shadow-sm"
@@ -1075,7 +1076,7 @@ export default function DoctorChat() {
               <div>
                 <h3 className="text-lg font-bold">Past Consultation</h3>
                 <p className="text-teal-100 text-xs mt-0.5">
-                  {new Date(selectedHistoryChat.createdAt).toLocaleString()} with Dr. {doctor.fullName}
+                  {new Date(selectedHistoryChat.createdAt).toLocaleString()} with {formatDoctorName(doctor.fullName)}
                 </p>
               </div>
               <button

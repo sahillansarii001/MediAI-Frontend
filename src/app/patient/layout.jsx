@@ -11,6 +11,7 @@ import { getSocket } from "@/lib/socket";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Bell } from "lucide-react";
 import { IncomingCallModal } from "@/components/shared/IncomingCallModal";
+import { formatDoctorName } from "@/lib/utils";
 
 export default function PatientLayout({ children }) {
   const router = useRouter();
@@ -141,7 +142,7 @@ export default function PatientLayout({ children }) {
         toast((t) => (
           <div className="flex flex-col gap-2">
             <span className="font-bold text-sm">📹 Video Call Reminder</span>
-            <span className="text-xs">Dr. {data.doctorName || 'Doctor'} scheduled call around {data.timeStr}.</span>
+            <span className="text-xs">{formatDoctorName(data.doctorName)} scheduled call around {data.timeStr}.</span>
             <Button
               size="sm"
               className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs mt-1"
@@ -366,7 +367,7 @@ export default function PatientLayout({ children }) {
                   Consultation Request
                 </h3>
                 <p className="text-teal-700 text-sm mt-2 font-medium">
-                  Dr. {incomingDoctorRequest.doctor?.fullName} wants to connect
+                  {formatDoctorName(incomingDoctorRequest.doctor?.fullName)} wants to connect
                   with you
                 </p>
               </div>
@@ -381,7 +382,7 @@ export default function PatientLayout({ children }) {
                       Doctor
                     </p>
                     <p className="text-xl font-bold text-slate-900 truncate">
-                      Dr. {incomingDoctorRequest.doctor?.fullName}
+                      {formatDoctorName(incomingDoctorRequest.doctor?.fullName)}
                     </p>
                   </div>
                 </div>
@@ -436,7 +437,7 @@ export default function PatientLayout({ children }) {
                 New Message
               </h3>
               <p className="text-teal-700 text-sm mt-2 font-medium">
-                Dr. {followUpNotification.doctorName} sent you a follow-up
+                {formatDoctorName(followUpNotification.doctorName)} sent you a follow-up
               </p>
             </div>
 

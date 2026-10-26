@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import api from "@/lib/api";
 import { Modal } from "@/components/ui/modal";
+import { formatDoctorName } from "@/lib/utils";
 
 export default function SymptomChecker() {
   const initialMessages = [
@@ -413,7 +414,7 @@ export default function SymptomChecker() {
                         className="w-14 h-14 rounded-full object-cover shrink-0 border border-slate-200"
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-slate-900 text-sm truncate">Dr. {doctor.fullName}</h4>
+                        <h4 className="font-semibold text-slate-900 text-sm truncate">{formatDoctorName(doctor.fullName)}</h4>
                         <p className="text-xs text-slate-500 truncate">{doctor.specialization} • {doctor.experience} yrs exp</p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <span className="text-xs font-medium text-amber-600 flex items-center bg-amber-50 px-1.5 py-0.5 rounded">

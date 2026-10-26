@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Modal } from "@/components/ui/modal"
 import { Search, Edit2, Trash2, Filter, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
+import { formatDoctorName } from "@/lib/utils"
 
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState([])
@@ -334,7 +335,7 @@ export default function AdminAppointments() {
       {/* Delete/Cancel Confirmation Modal */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Cancel Appointment">
         <div className="space-y-4">
-          <p className="text-slate-600">Are you sure you want to cancel/delete the appointment for <span className="font-semibold text-slate-900">{selectedAppointment?.patient?.fullName || "Unknown Patient"}</span> with <span className="font-semibold text-slate-900">Dr. {selectedAppointment?.doctor?.fullName || "Unknown"}</span>? This action will notify the patient if cancelled.</p>
+          <p className="text-slate-600">Are you sure you want to cancel/delete the appointment for <span className="font-semibold text-slate-900">{selectedAppointment?.patient?.fullName || "Unknown Patient"}</span> with <span className="font-semibold text-slate-900">{formatDoctorName(selectedAppointment?.doctor?.fullName || "Unknown")}</span>? This action will notify the patient if cancelled.</p>
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Keep Appointment</Button>
             <Button variant="danger" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteAppointment}>Cancel/Delete Appointment</Button>

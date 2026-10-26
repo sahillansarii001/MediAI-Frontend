@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import Link from "next/link";
 import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/context/AuthContext";
+import { formatDoctorName } from "@/lib/utils";
 
 const CONSULTATION_PRICES = { chat: 99, voice: 199, video: 299 };
 // Utility to calculate total price with discount
@@ -300,7 +301,7 @@ export default function DoctorRecommendation() {
                   <div>
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-900">Dr. {doctor.fullName}</h3>
+                        <h3 className="text-xl font-bold text-slate-900">{formatDoctorName(doctor.fullName)}</h3>
                         <p className="text-teal-600 font-semibold flex items-center gap-1.5 mt-0.5">
                           <Stethoscope className="h-4 w-4" /> {doctor.specialization}
                         </p>
