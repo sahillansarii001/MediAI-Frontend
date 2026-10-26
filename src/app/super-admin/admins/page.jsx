@@ -116,6 +116,29 @@ export default function ManageAdmins() {
     }
   }
 
+  const handleVerifyHospital = async (id, status) => {
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+      const res = await fetch(`${apiBase}/super-admin/admins/${id}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Hospital ${status === 'approved' ? 'approved' : 'rejected'}`)
+        fetchAdmins()
+      } else {
+        toast.error(data.message || 'Failed to update verification status')
+      }
+    } catch (err) {
+      toast.error("Error verifying hospital")
+    }
+  }
+
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to permanently delete this admin? This action cannot be undone.")) return
     try {
@@ -170,14 +193,15 @@ export default function ManageAdmins() {
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600">Hospital Name</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600">Email</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600">Region</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Status</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Verification</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Account</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {admins.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
                     No hospitals found. Create one to get started.
                   </td>
                 </tr>
@@ -200,6 +224,17 @@ export default function ManageAdmins() {
                       {admin.assignedRegion || <span className="text-slate-400 italic">Global</span>}
                     </td>
                     <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        admin.verificationStatus === 'approved'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : admin.verificationStatus === 'rejected'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {admin.verificationStatus ? admin.verificationStatus.toUpperCase() : 'APPROVED'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         admin.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
@@ -207,9 +242,25 @@ export default function ManageAdmins() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      {admin.verificationStatus !== 'approved' && (
+                        <button
+                          onClick={() => handleVerifyHospital(admin._id, 'approved')}
+                          className="text-xs font-semibold text-emerald-600 hover:text-emerald-900 mr-3 px-2 py-1 bg-emerald-50 rounded-md border border-emerald-200"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {admin.verificationStatus !== 'rejected' && admin.verificationStatus === 'pending' && (
+                        <button
+                          onClick={() => handleVerifyHospital(admin._id, 'rejected')}
+                          className="text-xs font-semibold text-rose-600 hover:text-rose-900 mr-3 px-2 py-1 bg-rose-50 rounded-md border border-rose-200"
+                        >
+                          Reject
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleSuspend(admin._id, admin.isActive)}
-                        className={`text-sm mr-4 ${admin.isActive ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900'}`}
+                        className={`text-sm mr-3 ${admin.isActive ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900'}`}
                       >
                         {admin.isActive ? 'Suspend' : 'Activate'}
                       </button>

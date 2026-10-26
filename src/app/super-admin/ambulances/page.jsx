@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Input } from "@/components/ui/input"
+import { Input, Label } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Ambulance, Search, Phone, CreditCard, Car, User, Shield, Sun, Moon, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Modal } from "@/components/ui/modal"
+import { Ambulance, Search, Phone, CreditCard, Car, User, Shield, Sun, Moon, Clock, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { getSocket } from "@/lib/socket"
@@ -21,23 +22,37 @@ const SHIFT_CONFIG = {
   both:    { label: "Both Shifts",   icon: Clock, color: "bg-slate-100 text-slate-600 border-slate-200" },
 }
 
+const emptyForm = {
+  numberPlate: "",
+  driverName: "",
+  phoneNumber: "",
+  drivingLicense: "",
+  status: "available",
+  shift: "morning",
+}
+
 export default function SuperAdminAmbulancesPage() {
   const [ambulances, setAmbulances] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState(null)
+  const [form, setForm] = useState(emptyForm)
+  const [submitting, setSubmitting] = useState(false)
   const socketRef = useRef(null)
 
-  useEffect(() => {
-    const fetchAmbulances = async () => {
-      try {
-        const res = await api.get("/ambulances")
-        if (res.data.success) setAmbulances(res.data.data)
-      } catch {
-        toast.error("Failed to load ambulance data")
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchAmbulances = async () => {
+    try {
+      const res = await api.get("/ambulances")
+      if (res.data.success) setAmbulances(res.data.data)
+    } catch {
+      toast.error("Failed to load ambulance data")
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchAmbulances()
 
     const socket = getSocket()
@@ -70,14 +85,70 @@ export default function SuperAdminAmbulancesPage() {
     }
   }, [])
 
+  const openAdd = () => {
+    setEditTarget(null)
+    setForm(emptyForm)
+    setModalOpen(true)
+  }
+
+  const openEdit = (amb) => {
+    setEditTarget(amb)
+    setForm({
+      numberPlate: amb.numberPlate,
+      driverName: amb.driverName,
+      phoneNumber: amb.phoneNumber,
+      drivingLicense: amb.drivingLicense,
+      status: amb.status,
+      shift: amb.shift || "morning",
+    })
+    setModalOpen(true)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.numberPlate || !form.driverName || !form.phoneNumber || !form.drivingLicense) {
+      toast.error("All fields are required")
+      return
+    }
+    setSubmitting(true)
+    try {
+      if (editTarget) {
+        const res = await api.put(`/ambulances/${editTarget._id}`, form)
+        if (res.data.success) toast.success("Ambulance updated")
+      } else {
+        const res = await api.post("/ambulances", form)
+        if (res.data.success) toast.success("Ambulance registered")
+      }
+      setModalOpen(false)
+      fetchAmbulances()
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save ambulance")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (amb) => {
+    if (!confirm(`Are you sure you want to delete ambulance ${amb.numberPlate}?`)) return
+    try {
+      const res = await api.delete(`/ambulances/${amb._id}`)
+      if (res.data.success) {
+        toast.success("Ambulance deleted")
+        setAmbulances(prev => prev.filter(a => a._id !== amb._id))
+      }
+    } catch {
+      toast.error("Failed to delete ambulance")
+    }
+  }
+
   const filtered = ambulances.filter(a =>
-    a.driverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.numberPlate.toLowerCase().includes(searchQuery.toLowerCase())
+    (a.driverName && a.driverName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (a.numberPlate && a.numberPlate.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 6 // Grid layout
+  const itemsPerPage = 6
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -99,17 +170,21 @@ export default function SuperAdminAmbulancesPage() {
 
   return (
     <div className="space-y-8">
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Ambulance Fleet Overview</h1>
-          <p className="text-slate-500 mt-1 text-sm">Read-only real-time view of all registered ambulances.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Ambulance Fleet Management</h1>
+          <p className="text-slate-500 mt-1 text-sm">Full administrative dispatch and fleet management across all emergency zones.</p>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full self-start sm:self-auto">
-          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          Live Updates
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            Live Updates
+          </span>
+          <Button onClick={openAdd} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
+            <Plus className="w-4 h-4 mr-2" /> Register Ambulance
+          </Button>
+        </div>
       </div>
 
       {/* Stats Row */}
@@ -153,7 +228,7 @@ export default function SuperAdminAmbulancesPage() {
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-400">
           <Ambulance className="w-14 h-14 text-slate-200" />
           <p className="text-base font-semibold text-slate-700">No ambulances found</p>
-          <p className="text-sm">Admins can register ambulances from their panel.</p>
+          <p className="text-sm">Click Register Ambulance to add a unit to the fleet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -164,7 +239,6 @@ export default function SuperAdminAmbulancesPage() {
 
             return (
               <Card key={amb._id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                {/* Card top strip */}
                 <div className="h-1.5 bg-linear-to-r from-teal-500 to-indigo-500" />
 
                 <CardContent className="p-5 space-y-4">
@@ -189,7 +263,6 @@ export default function SuperAdminAmbulancesPage() {
                     </div>
                   </div>
 
-                  {/* Divider */}
                   <div className="border-t border-slate-100" />
 
                   {/* Driver details */}
@@ -217,20 +290,34 @@ export default function SuperAdminAmbulancesPage() {
                     </div>
                   </div>
 
-                  {/* Divider */}
                   <div className="border-t border-slate-100" />
 
-                  {/* Footer: added by + date */}
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                  {/* Footer: Added by + Action buttons */}
+                  <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
                     <div className="flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5" />
+                      <Shield className="w-3.5 h-3.5 text-indigo-500" />
                       <span>
                         {amb.addedBy?.fullName
                           ? <span className="font-medium text-slate-600">{amb.addedBy.fullName}</span>
-                          : "Unknown Admin"}
+                          : "Central Admin"}
                       </span>
                     </div>
-                    <span>{new Date(amb.createdAt).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openEdit(amb)}
+                        className="text-indigo-600 hover:text-indigo-800 font-semibold p-1 hover:bg-indigo-50 rounded"
+                        title="Edit Ambulance"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(amb)}
+                        className="text-red-500 hover:text-red-700 font-semibold p-1 hover:bg-red-50 rounded"
+                        title="Delete Ambulance"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -243,7 +330,7 @@ export default function SuperAdminAmbulancesPage() {
       {filtered.length > 0 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 mt-8 bg-white rounded-xl shadow-sm">
           <div className="text-sm text-slate-500">
-            Showing <span className="font-medium">{filtered.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> entries
+            Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> entries
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
@@ -258,6 +345,84 @@ export default function SuperAdminAmbulancesPage() {
           </div>
         </div>
       )}
+
+      {/* Add / Edit Modal */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editTarget ? "Edit Ambulance" : "Register New Ambulance"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Vehicle Number Plate</Label>
+              <Input
+                required
+                placeholder="e.g. DL-01-AB-1234"
+                value={form.numberPlate}
+                onChange={e => setForm({...form, numberPlate: e.target.value.toUpperCase()})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Driver Full Name</Label>
+              <Input
+                required
+                placeholder="Driver Name"
+                value={form.driverName}
+                onChange={e => setForm({...form, driverName: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Driver Phone Number</Label>
+              <Input
+                required
+                placeholder="+91 XXXXX XXXXX"
+                value={form.phoneNumber}
+                onChange={e => setForm({...form, phoneNumber: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Driving License Number</Label>
+              <Input
+                required
+                placeholder="DL-XXXX-XXXX"
+                value={form.drivingLicense}
+                onChange={e => setForm({...form, drivingLicense: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Operational Shift</Label>
+              <select
+                className="h-10 w-full rounded-md border border-slate-200 px-3 py-2 text-sm bg-white"
+                value={form.shift}
+                onChange={e => setForm({...form, shift: e.target.value})}
+              >
+                <option value="morning">Morning Shift (08:00 - 20:00)</option>
+                <option value="night">Night Shift (20:00 - 08:00)</option>
+                <option value="both">24/7 Both Shifts</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Fleet Status</Label>
+              <select
+                className="h-10 w-full rounded-md border border-slate-200 px-3 py-2 text-sm bg-white"
+                value={form.status}
+                onChange={e => setForm({...form, status: e.target.value})}
+              >
+                <option value="available">Available</option>
+                <option value="on_duty">On Duty</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+          <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              {submitting ? "Saving..." : (editTarget ? "Update Ambulance" : "Register Ambulance")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

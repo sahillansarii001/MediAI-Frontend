@@ -232,47 +232,69 @@ export default function SuperAdminDashboard() {
 
             <div className="grid grid-cols-2 gap-3.5">
               <Link
-                href="/super-admin/admins"
-                className="flex flex-col items-center justify-center p-4 bg-indigo-50/60 rounded-2xl hover:bg-indigo-100/80 transition-all border border-indigo-100 text-center group"
+                href="/super-admin/doctor-verification"
+                className="flex flex-col items-center justify-center p-3.5 bg-amber-50/70 rounded-2xl hover:bg-amber-100 transition-all border border-amber-200 text-center group"
               >
-                <div className="w-10 h-10 rounded-xl bg-white shadow-xs text-indigo-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <div className="w-9 h-9 rounded-xl bg-white shadow-xs text-amber-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-xs text-amber-950">Verify Doctors</span>
+                <span className="text-[10px] text-amber-700 mt-0.5">Approve / Reject</span>
+              </Link>
+
+              <Link
+                href="/super-admin/doctors"
+                className="flex flex-col items-center justify-center p-3.5 bg-blue-50/70 rounded-2xl hover:bg-blue-100 transition-all border border-blue-200 text-center group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white shadow-xs text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-xs text-blue-950">All Doctors</span>
+                <span className="text-[10px] text-blue-700 mt-0.5">Hospitals Registry</span>
+              </Link>
+
+              <Link
+                href="/super-admin/admins"
+                className="flex flex-col items-center justify-center p-3.5 bg-indigo-50/60 rounded-2xl hover:bg-indigo-100/80 transition-all border border-indigo-100 text-center group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white shadow-xs text-indigo-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <span className="font-bold text-xs text-indigo-950">Manage Hospitals</span>
-                <span className="text-[10px] text-indigo-700 mt-0.5">Admin Tenants</span>
+                <span className="text-[10px] text-indigo-700 mt-0.5">Hospital Tenants</span>
+              </Link>
+
+              <Link
+                href="/super-admin/patients"
+                className="flex flex-col items-center justify-center p-3.5 bg-cyan-50/60 rounded-2xl hover:bg-cyan-100 transition-all border border-cyan-100 text-center group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white shadow-xs text-cyan-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <Users className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-xs text-cyan-950">Manage Patients</span>
+                <span className="text-[10px] text-cyan-700 mt-0.5">Health Records</span>
+              </Link>
+
+              <Link
+                href="/super-admin/ambulances"
+                className="flex flex-col items-center justify-center p-3.5 bg-emerald-50/60 rounded-2xl hover:bg-emerald-100 transition-all border border-emerald-100 text-center group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white shadow-xs text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-xs text-emerald-950">Ambulance Fleet</span>
+                <span className="text-[10px] text-emerald-700 mt-0.5">Manage & Dispatch</span>
               </Link>
 
               <Link
                 href="/super-admin/emergency-control"
-                className="flex flex-col items-center justify-center p-4 bg-red-50/60 rounded-2xl hover:bg-red-100/80 transition-all border border-red-100 text-center group"
+                className="flex flex-col items-center justify-center p-3.5 bg-red-50/60 rounded-2xl hover:bg-red-100/80 transition-all border border-red-100 text-center group"
               >
-                <div className="w-10 h-10 rounded-xl bg-white shadow-xs text-red-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
+                <div className="w-9 h-9 rounded-xl bg-white shadow-xs text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <span className="font-bold text-xs text-red-950">Emergency Hub</span>
-                <span className="text-[10px] text-red-700 mt-0.5">GPS Dispatch</span>
-              </Link>
-
-              <Link
-                href="/super-admin/analytics"
-                className="flex flex-col items-center justify-center p-4 bg-emerald-50/60 rounded-2xl hover:bg-emerald-100/80 transition-all border border-emerald-100 text-center group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white shadow-xs text-emerald-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-xs text-emerald-950">Platform Analytics</span>
-                <span className="text-[10px] text-emerald-700 mt-0.5">Global Insights</span>
-              </Link>
-
-              <Link
-                href="/super-admin/settings"
-                className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all border border-slate-200 text-center group"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white shadow-xs text-slate-700 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
-                  <Cpu className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-xs text-slate-900">System Config</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">API & Gateways</span>
+                <span className="text-[10px] text-red-700 mt-0.5">Live SOS</span>
               </Link>
             </div>
           </div>

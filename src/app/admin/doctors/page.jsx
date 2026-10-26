@@ -26,7 +26,7 @@ export default function AdminDoctors() {
 
   // Form State
   const [formData, setFormData] = useState({
-    fullName: "", email: "", phone: "", specialization: "", licenseNumber: "", yearsOfExperience: "", hospitalName: "", clinicAddress: "", verificationStatus: "pending", accountStatus: "active"
+    fullName: "", email: "", phone: "", password: "", specialization: "", licenseNumber: "", yearsOfExperience: "", hospitalName: "", clinicAddress: "", accountStatus: "active"
   })
 
   const fetchDoctors = async (isPolling = false) => {
@@ -84,18 +84,34 @@ export default function AdminDoctors() {
     setCurrentPage(1)
   }, [searchQuery, specFilter, verifFilter])
 
+  const handleOpenAdd = () => {
+    setSelectedDoctor(null)
+    setFormData({
+      fullName: "",
+      email: "",
+      phone: "",
+      password: "",
+      specialization: "",
+      licenseNumber: "",
+      yearsOfExperience: "",
+      hospitalName: "",
+      clinicAddress: "",
+      accountStatus: "active"
+    })
+    setIsFormModalOpen(true)
+  }
 
   const handleOpenEdit = (doctor) => {
     setFormData({
       fullName: doctor.fullName || "",
       email: doctor.email || "",
       phone: doctor.phone || "",
+      password: "",
       specialization: doctor.specialization || "",
       licenseNumber: doctor.licenseNumber || "",
       yearsOfExperience: doctor.yearsOfExperience || "",
       hospitalName: doctor.hospitalName || "",
       clinicAddress: doctor.clinicAddress || "",
-      verificationStatus: doctor.verificationStatus || "pending",
       accountStatus: doctor.accountStatus || "active"
     })
     setSelectedDoctor(doctor)
@@ -114,16 +130,22 @@ export default function AdminDoctors() {
 
   const handleSaveDoctor = async (e) => {
     e.preventDefault()
-    if (selectedDoctor) {
-      try {
-        await api.put(`/admin/doctors/${selectedDoctor._id}`, formData)
+    try {
+      if (selectedDoctor) {
+        const updatePayload = { ...formData }
+        if (!updatePayload.password) delete updatePayload.password
+        await api.put(`/admin/doctors/${selectedDoctor._id}`, updatePayload)
         toast.success("Doctor details updated")
-        fetchDoctors()
-        setIsFormModalOpen(false)
-      } catch (err) {
-        console.error("Failed to update doctor:", err)
-        toast.error("Failed to update doctor")
+      } else {
+        await api.post('/admin/doctors', formData)
+        toast.success("Doctor registered! Awaiting Platform Admin verification.")
       }
+      fetchDoctors()
+      setIsFormModalOpen(false)
+    } catch (err) {
+      console.error("Failed to save doctor:", err)
+      const msg = err.response?.data?.message || "Failed to save doctor"
+      toast.error(msg)
     }
   }
 
@@ -158,9 +180,12 @@ export default function AdminDoctors() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Doctors</h1>
-          <p className="text-slate-500">Manage all doctor accounts and verifications.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Hospital Doctors</h1>
+          <p className="text-slate-500">Register and manage doctors affiliated with your hospital.</p>
         </div>
+        <Button onClick={handleOpenAdd} className="bg-teal-600 hover:bg-teal-700 text-white shadow-xs">
+          <Plus className="w-4 h-4 mr-2" /> Add Doctor
+        </Button>
       </div>
 
       <Card>
@@ -284,7 +309,7 @@ export default function AdminDoctors() {
       <Modal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
-        title="Edit Doctor"
+        title={selectedDoctor ? "Edit Doctor" : "Register Doctor"}
       >
         <form onSubmit={handleSaveDoctor} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -300,12 +325,18 @@ export default function AdminDoctors() {
               <Label htmlFor="phone" className="text-slate-700">Phone</Label>
               <Input id="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="text-slate-900" />
             </div>
+            {!selectedDoctor && (
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-slate-700">Initial Password</Label>
+                <Input id="password" type="password" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required minLength={6} placeholder="Min 6 characters" className="text-slate-900" />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="specialization" className="text-slate-700">Specialization</Label>
               <Input id="specialization" value={formData.specialization} onChange={e => setFormData({ ...formData, specialization: e.target.value })} required className="text-slate-900" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="licenseNumber" className="text-slate-700">License Number</Label>
+              <Label htmlFor="licenseNumber" className="text-slate-700">Medical License Number</Label>
               <Input id="licenseNumber" value={formData.licenseNumber} onChange={e => setFormData({ ...formData, licenseNumber: e.target.value })} required className="text-slate-900" />
             </div>
             <div className="space-y-2">
@@ -321,23 +352,10 @@ export default function AdminDoctors() {
               <Input id="clinicAddress" value={formData.clinicAddress} onChange={e => setFormData({ ...formData, clinicAddress: e.target.value })} required className="text-slate-900" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="verificationStatus" className="text-slate-700">Verification Status</Label>
-              <select
-                id="verificationStatus"
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
-                value={formData.verificationStatus}
-                onChange={e => setFormData({ ...formData, verificationStatus: e.target.value })}
-              >
-                <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="accountStatus" className="text-slate-700">Account Status</Label>
               <select
                 id="accountStatus"
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
                 value={formData.accountStatus}
                 onChange={e => setFormData({ ...formData, accountStatus: e.target.value })}
               >
@@ -345,10 +363,15 @@ export default function AdminDoctors() {
                 <option value="suspended">Suspended</option>
               </select>
             </div>
+            <div className="space-y-2 flex flex-col justify-end">
+              <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                Notice: Doctor verification is handled centrally by the Platform Admin.
+              </p>
+            </div>
           </div>
           <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
             <Button type="button" variant="outline" onClick={() => setIsFormModalOpen(false)}>Cancel</Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit">{selectedDoctor ? "Save Changes" : "Register Doctor"}</Button>
           </div>
         </form>
       </Modal>

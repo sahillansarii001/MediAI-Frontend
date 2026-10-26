@@ -73,9 +73,8 @@ export function Sidebar({ role }) {
       { name: "Support Tickets", href: "/doctor/support-tickets", icon: LifeBuoy },
     ],
     admin: [
-      { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-      { name: "Doctors", href: "/admin/doctors", icon: Stethoscope },
-      { name: "Doctor Verification", href: "/admin/doctor-verification", icon: ShieldCheck },
+      { name: "Hospital Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { name: "Hospital Doctors", href: "/admin/doctors", icon: Stethoscope },
       { name: "Appointments", href: "/admin/appointments", icon: Calendar },
       { name: "Reports", href: "/admin/reports", icon: FileText },
       { name: "Pharmacy Orders", href: "/admin/pharmacy", icon: Truck },
@@ -83,16 +82,18 @@ export function Sidebar({ role }) {
       { name: "Emergency Monitoring", href: "/admin/emergency-monitoring", icon: AlertTriangle, variant: "destructive" },
       { name: "Transactions", href: "/admin/transactions", icon: FileSpreadsheet },
       { name: "Support Tickets", href: "/admin/support-tickets", icon: LifeBuoy },
-      { name: "System Settings", href: "/admin/settings", icon: Settings },
+      { name: "Hospital Ambulances", href: "/admin/ambulances", icon: Truck },
+      { name: "Hospital Settings", href: "/admin/settings", icon: Settings },
       { name: "Audit Logs", href: "/admin/audit-logs", icon: FileClock },
-      { name: "Ambulances", href: "/admin/ambulances", icon: Truck },
     ],
     super_admin: [
-      { name: "Platform Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
-      { name: "Platform Users", href: "/admin/users", icon: Users },
-      { name: "Manage Hospitals", href: "/super-admin/admins", icon: ShieldCheck },
-      { name: "Emergency Hub", href: "/super-admin/emergency-control", icon: AlertTriangle, variant: "destructive" },
+      { name: "Admin Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
+      { name: "Doctor Verification", href: "/super-admin/doctor-verification", icon: ShieldCheck },
+      { name: "Manage Doctors", href: "/super-admin/doctors", icon: Stethoscope },
+      { name: "Manage Hospitals", href: "/super-admin/admins", icon: BriefcaseMedical },
+      { name: "Manage Patients", href: "/super-admin/patients", icon: Users },
       { name: "Ambulance Fleet", href: "/super-admin/ambulances", icon: Truck },
+      { name: "Emergency Hub", href: "/super-admin/emergency-control", icon: AlertTriangle, variant: "destructive" },
       { name: "Platform Analytics", href: "/super-admin/analytics", icon: Activity },
       { name: "Global Settings", href: "/super-admin/settings", icon: Settings },
     ]
@@ -196,13 +197,13 @@ export function Sidebar({ role }) {
               <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">Logged in as</p>
               <p className="text-sm font-bold text-slate-900 capitalize flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-cyan-500"></span>
-                {role}
+                {role === 'admin' ? 'Hospital' : role === 'super_admin' ? 'Platform Admin' : role}
               </p>
             </div>
           ) : (
             <div className="flex justify-center">
               <div className="h-8 w-8 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-xs font-bold text-cyan-700 uppercase">
-                {role.charAt(0)}
+                {role === 'admin' ? 'H' : role === 'super_admin' ? 'A' : role.charAt(0)}
               </div>
             </div>
           )}
