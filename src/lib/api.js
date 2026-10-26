@@ -126,6 +126,14 @@ api.interceptors.response.use(
       }
     }
 
+    // Log 4xx/5xx errors in development with useful endpoint & response detail
+    if (error.response) {
+      console.warn(
+        `[API Error ${error.response.status}] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`,
+        error.response.data
+      );
+    }
+
     // Always reject error if we can't handle it
     return Promise.reject(error);
   },
