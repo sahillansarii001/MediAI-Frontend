@@ -137,7 +137,7 @@ export default function SuperAdminDashboard() {
 
         {/* Active Emergencies */}
         <Link href="/super-admin/emergency-control" className="block group">
-          <div className="p-5 rounded-2xl bg-white border border-red-200/80 shadow-xs hover:shadow-md hover:border-red-400 transition-all bg-red-50/20 h-full">
+          <div className="p-5 rounded-2xl bg-red-50/20 border border-red-200/80 shadow-xs hover:shadow-md hover:border-red-400 transition-all h-full">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-red-700">Active Emergencies</span>
               <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">

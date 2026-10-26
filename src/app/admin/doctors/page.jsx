@@ -204,7 +204,7 @@ export default function AdminDoctors() {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Filter className="w-4 h-4 text-slate-500" />
                 <select
-                  className="flex h-10 w-full sm:w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-white text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+                  className="flex h-10 w-full sm:w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
                   value={specFilter}
                   onChange={(e) => setSpecFilter(e.target.value)}
                 >
@@ -215,7 +215,7 @@ export default function AdminDoctors() {
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <select
-                  className="flex h-10 w-full sm:w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-white text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+                  className="flex h-10 w-full sm:w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
                   value={verifFilter}
                   onChange={(e) => setVerifFilter(e.target.value)}
                 >
