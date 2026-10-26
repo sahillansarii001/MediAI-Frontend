@@ -257,7 +257,7 @@ export default function AdminAppointments() {
                 <span className="hidden sm:inline">Previous</span>
               </Button>
               
-              <div className="flex items-center gap-1 hidden md:flex">
+              <div className="hidden md:flex items-center gap-1">
                 {getPageNumbers().map((page, index) => (
                   page === '...' ? (
                     <span key={`ellipsis-${index}`} className="px-2 text-slate-400">...</span>
@@ -267,7 +267,7 @@ export default function AdminAppointments() {
                       variant={currentPage === page ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(page)}
-                      className={`h-8 min-w-[2rem] px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
+                      className={`h-8 min-w-8 px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
                     >
                       {page}
                     </Button>

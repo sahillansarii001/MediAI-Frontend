@@ -210,7 +210,7 @@ export default function AdminReports() {
                 <span className="hidden sm:inline">Previous</span>
               </Button>
               
-              <div className="flex items-center gap-1 hidden md:flex">
+              <div className="hidden md:flex items-center gap-1">
                 {getPageNumbers().map((page, index) => (
                   page === '...' ? (
                     <span key={`ellipsis-${index}`} className="px-2 text-slate-400">...</span>
@@ -220,7 +220,7 @@ export default function AdminReports() {
                       variant={currentPage === page ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(page)}
-                      className={`h-8 min-w-[2rem] px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
+                      className={`h-8 min-w-8 px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
                     >
                       {page}
                     </Button>
@@ -260,14 +260,14 @@ export default function AdminReports() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-semibold text-slate-900 block mb-2">Clinical Summary</label>
-                <div className="p-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap min-h-[100px]">
+                <div className="p-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap min-h-25">
                   {selectedReport.summary || "No summary provided."}
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-semibold text-slate-900 block mb-2">Prescription & Recommendations</label>
-                <div className="p-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap min-h-[100px]">
+                <div className="p-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 whitespace-pre-wrap min-h-25">
                   {selectedReport.prescription || "No prescription provided."}
                 </div>
               </div>

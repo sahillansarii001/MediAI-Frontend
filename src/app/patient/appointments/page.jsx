@@ -339,7 +339,7 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 fade-in">
             {/* Teal top bar */}
-            <div className="h-2 bg-gradient-to-r from-teal-400 to-teal-600" />
+            <div className="h-2 bg-linear-to-r from-teal-400 to-teal-600" />
 
             {/* Close */}
             <button
@@ -490,7 +490,7 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:items-end gap-3 sm:pl-6 sm:border-l border-slate-100 shrink-0 min-w-[150px]">
+                  <div className="flex flex-col sm:items-end gap-3 sm:pl-6 sm:border-l border-slate-100 shrink-0 min-w-37.5">
                     {/* Collaborative actions */}
                     {apt.status === "pending_reschedule_by_doctor" && (
                       <div className="flex flex-col gap-2 w-full">
@@ -513,7 +513,7 @@ export default function AppointmentsPage() {
                     {apt.status === "approved_pending_payment" && (
                       <div className="flex flex-col gap-2 w-full">
                         <Button 
-                          className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold animate-pulse hover:from-teal-600 hover:to-emerald-700 text-sm shadow-md"
+                          className="w-full bg-linear-to-r from-teal-500 to-emerald-600 text-white font-bold animate-pulse hover:from-teal-600 hover:to-emerald-700 text-sm shadow-md"
                           onClick={() => handlePayment(apt._id)}
                         >
                           Pay Now to Book
