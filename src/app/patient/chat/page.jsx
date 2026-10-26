@@ -77,6 +77,12 @@ export default function DoctorChat() {
 
         if (!chatData) return;
 
+        // If the consultation requested is pure video call and is active, redirect directly to the Video Call page without showing chat section
+        if (chatData.status === 'active' && chatData.features?.includes('video') && !chatData.features?.includes('chat')) {
+          router.replace(`/patient/video-call?chatId=${chatData._id}&isVideo=true`);
+          return;
+        }
+
         setChat(chatData)
         const formatted = (chatData.messages || []).map(m => ({
           sender: m.senderModel === 'Doctor' ? 'doctor' : 'user',

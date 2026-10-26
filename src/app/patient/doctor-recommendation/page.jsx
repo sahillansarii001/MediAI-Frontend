@@ -41,9 +41,15 @@ export default function DoctorRecommendation() {
   const [selectedFeaturesModal1, setSelectedFeaturesModal1] = useState([]);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // Video Call Timing Selection
+  const [callScheduleType, setCallScheduleType] = useState('now'); // 'now' or 'scheduled'
+  const [scheduledCallTime, setScheduledCallTime] = useState('');
+
   const openConsultationModal = (doctorId) => {
     setPendingDoctorId(doctorId);
     setSelectedFeaturesModal1(['chat']);
+    setCallScheduleType('now');
+    setScheduledCallTime('');
     setConsultationModalOpen(true);
   };
 
@@ -78,10 +84,20 @@ export default function DoctorRecommendation() {
 
   // User picks features → Send request to Doctor
   const handleRequestConsultation = async () => {
+    if (selectedFeaturesModal1.includes('video') && callScheduleType === 'scheduled' && !scheduledCallTime) {
+      alert("Please select your preferred scheduled time for the video call.");
+      return;
+    }
+
     setPendingFeatures(selectedFeaturesModal1);
     setIsWaitingForDoctor(true);
     try {
-      const res = await api.post("/chats/request", { doctorId: pendingDoctorId, features: selectedFeaturesModal1 });
+      const res = await api.post("/chats/request", {
+        doctorId: pendingDoctorId,
+        features: selectedFeaturesModal1,
+        callScheduleType,
+        scheduledTime: callScheduleType === 'scheduled' ? scheduledCallTime : undefined
+      });
       if (res.data.success) {
         setPendingChatId(res.data.data._id);
       }
@@ -99,7 +115,18 @@ export default function DoctorRecommendation() {
     setIsProcessingPayment(false);
     
     if (paid) {
-      router.push(`/patient/chat?chatId=${pendingChatId}`);
+      // If patient booked video call:
+      // If "Now", connect directly to the Video Call page without entering the chat screen!
+      if (pendingFeatures.includes('video')) {
+        if (callScheduleType === 'scheduled') {
+          alert(`Your video call consultation has been scheduled with Dr. ${doctors.find(d => d._id === pendingDoctorId)?.fullName || 'Doctor'}! You will receive a reminder when the call is due.`);
+          router.push(`/patient/appointments`);
+        } else {
+          router.push(`/patient/video-call?chatId=${pendingChatId}&isVideo=true`);
+        }
+      } else {
+        router.push(`/patient/chat?chatId=${pendingChatId}`);
+      }
     } else {
       alert("Payment failed. Please try again.");
     }
@@ -401,6 +428,51 @@ export default function DoctorRecommendation() {
                   </div>
                   <span className="font-extrabold text-teal-700">+₹{CONSULTATION_PRICES.video}</span>
                 </div>
+
+                {/* Timing Options when Video Call is selected */}
+                {selectedFeaturesModal1.includes('video') && (
+                  <div className="bg-teal-50/60 p-4 rounded-xl border border-teal-200/60 space-y-3 animate-in fade-in duration-200">
+                    <p className="text-xs font-bold text-teal-900 uppercase tracking-wider">When would you like the Video Call?</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCallScheduleType('now')}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all ${
+                          callScheduleType === 'now'
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        ⚡ Call Now (Instant)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCallScheduleType('scheduled')}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all ${
+                          callScheduleType === 'scheduled'
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        📅 Schedule for Later
+                      </button>
+                    </div>
+
+                    {callScheduleType === 'scheduled' && (
+                      <div className="space-y-1.5 pt-1 animate-in slide-in-from-top-1">
+                        <label className="text-[11px] font-semibold text-slate-600 block">Select Date & Time:</label>
+                        <input
+                          type="datetime-local"
+                          value={scheduledCallTime}
+                          onChange={(e) => setScheduledCallTime(e.target.value)}
+                          className="w-full h-10 px-3 rounded-lg border border-teal-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          min={new Date().toISOString().slice(0, 16)}
+                        />
+                        <p className="text-[10px] text-teal-700 font-medium italic">Both you and the doctor will receive a reminder when the time arrives.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Note about discount */}

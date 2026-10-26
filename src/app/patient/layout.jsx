@@ -137,6 +137,25 @@ export default function PatientLayout({ children }) {
         );
       });
 
+      patientSocket.on("videoCallReminder", (data) => {
+        toast((t) => (
+          <div className="flex flex-col gap-2">
+            <span className="font-bold text-sm">📹 Video Call Reminder</span>
+            <span className="text-xs">Dr. {data.doctorName || 'Doctor'} scheduled call around {data.timeStr}.</span>
+            <Button
+              size="sm"
+              className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs mt-1"
+              onClick={() => {
+                toast.dismiss(t.id);
+                router.push(`/patient/video-call?chatId=${data.chatId}&isVideo=true`);
+              }}
+            >
+              Join Video Call
+            </Button>
+          </div>
+        ), { duration: 15000, position: 'top-right' });
+      });
+
       patientSocket.on("doctorChatRequest", (chatData) => {
         console.log(
           `[Socket] Patient received doctorChatRequest event:`,

@@ -124,10 +124,30 @@ export default function DoctorLayout({ children }) {
         }
       };
 
+      const handleVideoCallReminder = (data) => {
+        toast((t) => (
+          <div className="flex flex-col gap-2">
+            <span className="font-bold text-sm">📹 Scheduled Video Call Reminder</span>
+            <span className="text-xs">You have a video consultation with {data.patientName || 'Patient'} scheduled around {data.timeStr}.</span>
+            <Button
+              size="sm"
+              className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs mt-1"
+              onClick={() => {
+                toast.dismiss(t.id);
+                router.push(`/doctor/video-call?chatId=${data.chatId}&isVideo=true`);
+              }}
+            >
+              Start Video Call Now
+            </Button>
+          </div>
+        ), { duration: 15000, position: 'top-right' });
+      };
+
       socket.on("connect", handleConnect);
       socket.on("newChatRequest", handleNewChatRequest);
       socket.on("cancelChatRequest", handleCancelChatRequest);
       socket.on("userProfileUpdated", handleUserProfileUpdated);
+      socket.on("videoCallReminder", handleVideoCallReminder);
 
       if (socket.connected) {
         socket.emit("joinRoom", `doctor_${doctorId}`);
@@ -138,6 +158,7 @@ export default function DoctorLayout({ children }) {
         socket.off("newChatRequest", handleNewChatRequest);
         socket.off("cancelChatRequest", handleCancelChatRequest);
         socket.off("userProfileUpdated", handleUserProfileUpdated);
+        socket.off("videoCallReminder", handleVideoCallReminder);
       };
     }
   }, [isReady, role, user]);
@@ -178,9 +199,19 @@ export default function DoctorLayout({ children }) {
     return () => clearInterval(interval)
   }, [isReady, role]) // No longer depends on incomingRequest — uses ref instead
 
+  const [doctorCallTime, setDoctorCallTime] = useState("")
+
+  const isVideoConsultation = incomingRequest?.features?.includes('video')
+
   const handleAccept = async () => {
     try {
-      await api.put(`/chats/${incomingRequest._id}/respond`, { status: 'active' })
+      // If video consultation and doctor provided a specific call time, send it
+      const payload = { status: 'active' }
+      if (isVideoConsultation && doctorCallTime) {
+        payload.doctorCallTime = doctorCallTime
+      }
+
+      await api.put(`/chats/${incomingRequest._id}/respond`, payload)
 
       // Automatically update status to busy
       try {
@@ -195,10 +226,27 @@ export default function DoctorLayout({ children }) {
       }
 
       toast.success("Consultation accepted!")
-      const chatUrl = `/doctor/chat/${incomingRequest._id}`
       dismissedChatIds.current.add(incomingRequest._id)
+      
+      const reqId = incomingRequest._id
+      const isVideo = isVideoConsultation
+      const isScheduledForLater = incomingRequest.callScheduleType === 'scheduled' || !!doctorCallTime
+
       setIncomingRequest(null)
-      router.push(chatUrl)
+
+      // If it's a Video consultation:
+      // If scheduled for later, inform doctor and go to appointments
+      // If available now (instant), directly open the video call page and don't show the chat section!
+      if (isVideo) {
+        if (isScheduledForLater) {
+          toast.success("Video call scheduled. You will receive a reminder at the designated time.")
+          router.push(`/doctor/appointments`)
+        } else {
+          router.push(`/doctor/video-call?chatId=${reqId}&isVideo=true`)
+        }
+      } else {
+        router.push(`/doctor/chat/${reqId}`)
+      }
     } catch (err) {
       toast.error("Failed to accept consultation")
     }
@@ -291,6 +339,48 @@ export default function DoctorLayout({ children }) {
                 </div>
               </div>
 
+              {/* Details of request (Video Call badge / Schedule Time) */}
+              {isVideoConsultation && (
+                <div className="p-4 bg-teal-50 rounded-2xl border border-teal-200/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                      📹 Video Consultation Request
+                    </span>
+                    {incomingRequest.callScheduleType === 'scheduled' && (
+                      <span className="text-[10px] bg-teal-200/70 text-teal-900 font-extrabold px-2 py-0.5 rounded-full">
+                        Scheduled
+                      </span>
+                    )}
+                  </div>
+
+                  {incomingRequest.patientScheduledTime && (
+                    <div className="text-xs text-teal-950 font-medium">
+                      <p className="text-[10px] text-teal-700 font-bold uppercase">Patient Preferred Time:</p>
+                      <p className="font-bold text-sm text-teal-900 mt-0.5">
+                        {new Date(incomingRequest.patientScheduledTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-700 block">
+                      Doctor Calling Time (Optional):
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={doctorCallTime}
+                      onChange={(e) => setDoctorCallTime(e.target.value)}
+                      placeholder="Leave blank to call immediately"
+                      className="w-full h-10 px-3 rounded-xl border border-teal-200 bg-white text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                    <p className="text-[10px] text-slate-500 italic">
+                      If left blank and doctor is available, you will connect directly to the Video Call.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {isRescheduling ? (
                 <div className="space-y-4 animate-in slide-in-from-bottom-2">
                   <div className="space-y-2">
@@ -313,7 +403,7 @@ export default function DoctorLayout({ children }) {
                     Decline
                   </Button>
                   <Button className="h-14 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 transition-all flex items-center justify-center gap-2" onClick={handleAccept}>
-                    Accept Consultation
+                    {isVideoConsultation && !doctorCallTime && incomingRequest.callScheduleType !== 'scheduled' ? 'Start Call Now' : 'Accept & Confirm'}
                   </Button>
                 </div>
               )}
